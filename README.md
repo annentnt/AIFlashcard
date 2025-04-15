@@ -43,8 +43,22 @@
     - User can edit each flashcard in a topic and save.
 
 5. Word pronunciation:
-    - For each flashcard, user can click on the Speaker button to pronounce the word.    
+    - For each flashcard, user can click on the Speaker button to display IPA of the word.
+    - If user wants to listen to pronunciation of the word, click on the "Play" button next to the IPA.
+        -> Pronunciation learning
+6. Pronunciation learning:
+    - If user wants to check his/her pronunciation and compare it with the word pronunciation, click on "Check your pronunciation".
+    - System checks user's pronunciation and score it, then send it back to user. User can retry pronunciation checking to reach a higher score.
+7. Intonation learning:
+    - After learning a word's pronunciation, if user wants to pronounce it in a sentence example, user can enter "Intonation practice", system will generate a sentence including the word. Then user checks intonation and receive a score.
+
+## Technical implementation
+
 
 ## Stakeholders:
 - Admin
 - Learner
+
+## Questions:
+- Giới hạn độ dài của file input.
+- Đánh giá kết quả tạo flashcards từ API.
