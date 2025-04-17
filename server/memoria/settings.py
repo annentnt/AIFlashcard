@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "apps.flashcards",
     "apps.auth_user",
+    "apps.pronunciation",
 ]
 
 MIDDLEWARE = [

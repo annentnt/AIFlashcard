@@ -21,4 +21,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/flashcards/", include("apps.flashcards.urls")),
     path("api/auth/", include("apps.auth_user.urls")),
+    path("api/pronunciation/", include("apps.pronunciation.urls"))
 ]
