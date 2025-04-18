@@ -140,6 +140,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
+        'rest_framework.authentication.BasicAuthentication',
     ),
 }
 
@@ -167,3 +168,9 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "giaphucnguyen200441@gmail.com"
 EMAIL_HOST_PASSWORD = "bwsv spft ghjl omgt"
 DEFAULT_FROM_EMAIL = "Memoria"
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

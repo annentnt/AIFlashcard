@@ -20,6 +20,8 @@ from memoria.settings import DEFAULT_FROM_EMAIL
 
 
 class RegisterView(APIView):
+    permission_classes = (IsAuthenticated,)
+    
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
