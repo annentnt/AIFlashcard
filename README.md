@@ -8,7 +8,7 @@
 - Back-end: Django
 
 ## Requirements:
-1. Create flashcards from different kinds of input:
+1. Create flashcards from different kinds of input: **DONE**
     - Kinds of input:
         - Structured text
         - Unstructered text (docx, pptx, pdf)
@@ -19,6 +19,9 @@
     - Creating configuration:
         - Number of flashcards created
     - Filter documents with risk of attack
+
+    **TODO:** add a moderation layer.
+    
 2. Learn from flashcards:
     - User chooses a topic
         -> Each flashcard pops up to the screen. There will be 3 situations that can happen:
@@ -33,7 +36,8 @@
         - Relearn unlearnt words
         - Relearn learnt words
         - Learn all words
-3. History:
+
+3. History: --> TRANG
     - For each topic, save 3 informations:
         - New words
         - Unlearnt words
@@ -42,15 +46,17 @@
 4. Edit flashcards:
     - User can edit each flashcard in a topic and save.
 
-5. Word pronunciation:
+5. Word pronunciation: **DONE**
     - For each flashcard, user can click on the Speaker button to display IPA of the word.
     - If user wants to listen to pronunciation of the word, click on the "Play" button next to the IPA.
         -> Pronunciation learning
-6. Pronunciation learning:
+
+6. Pronunciation learning: --> LINH
     - If user wants to check his/her pronunciation and compare it with the word pronunciation, click on "Check your pronunciation".
     - System checks user's pronunciation and score it, then send it back to user. User can retry pronunciation checking to reach a higher score.
-7. Intonation learning:
-    - After learning a word's pronunciation, if user wants to pronounce it in a sentence example, user can enter "Intonation practice", system will generate a sentence including the word. Then user checks intonation and receive a score.
+
+<!-- 7. Intonation learning:
+    - After learning a word's pronunciation, if user wants to pronounce it in a sentence example, user can enter "Intonation practice", system will generate a sentence including the word. Then user checks intonation and receive a score. -->
 
 8. QnA Chatbot:
     - If user wants to ask about a vocabulary in any topic they have created, user can use Chatbot to ask.
@@ -64,6 +70,9 @@
     - When creating a topic from a document, system creates a knowledge graph from the document
     -> Each topic will have one knowledge graph.
     - When user asks about any word, system use RAG to query the word from the related knowledge graph and then respond to user the query's result.
+
+- Knowledge graph --> PHÚC
+- Flashcard similarity when displaying flashcards in "Learning with flashcards" --> PHÚC
 
 ## Stakeholders:
 - Admin
