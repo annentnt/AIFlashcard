@@ -9,6 +9,11 @@ djangorestframework = "*"
 django-cors-headers = "*"
 djangorestframework-simplejwt = "*"
 psycopg2 = "*"
+openai = "*"
+python-dotenv = "*"
+python-docx = "*"
+python-pptx = "*"
+pymupdf = "*"
 
 [dev-packages]
 
