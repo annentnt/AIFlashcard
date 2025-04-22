@@ -1,11 +1,17 @@
-from django.shortcuts import render
+from django.shortcuts import render, HttpResponse
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
 import requests
+
+from dotenv import load_dotenv
+from elevenlabs.client import ElevenLabs
+import os
+
 # Create your views here.
+load_dotenv()
 
 class WordPronunciation(APIView):
 
@@ -46,3 +52,32 @@ class WordPronunciation(APIView):
             return Response(response, status=status.HTTP_404_NOT_FOUND)
         
         return Response(response, status=status.HTTP_200_OK)
+    
+
+class SentencePronunciation(APIView):
+    
+    def _text_to_speech(self, text: str) -> bytes:
+
+        client = ElevenLabs(
+            api_key=os.getenv("ELEVENLABS_API_KEY")
+        )
+
+        audio = client.text_to_speech.convert(
+            text=text,
+            voice_id="JBFqnCBsd6RMkjVDRZzb",
+            model_id="eleven_multilingual_v2",
+            output_format="mp3_44100_128"
+        )
+
+        return b''.join(audio)
+    
+    def post(self, request):
+
+        if not request.data['text']:
+            return Response({"error": "Missing 'text'"}, status=status.HTTP_400_BAD_REQUEST)
+
+        audio_data = self._text_to_speech(text=request.data['text'])
+        response = HttpResponse(audio_data, content_type='audio/mpeg')
+        response['Content-Disposition'] = 'inline; filename="speech.mp3"'
+
+        return response
