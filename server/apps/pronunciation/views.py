@@ -4,14 +4,19 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-import requests
-
-from dotenv import load_dotenv
 from elevenlabs.client import ElevenLabs
-import os
+
+import tempfile
+from dotenv import load_dotenv
+from io import BytesIO
+import re, librosa, os, nltk, jiwer, requests
 
 # Create your views here.
 load_dotenv()
+
+nltk.download('punkt_tab')
+nltk.download('averaged_perceptron_tagger_eng')
+
 
 class WordPronunciation(APIView):
 
@@ -53,7 +58,6 @@ class WordPronunciation(APIView):
         
         return Response(response, status=status.HTTP_200_OK)
     
-
 class SentencePronunciation(APIView):
     
     def _text_to_speech(self, text: str) -> bytes:
@@ -81,3 +85,95 @@ class SentencePronunciation(APIView):
         response['Content-Disposition'] = 'inline; filename="speech.mp3"'
 
         return response
+
+class Evaluate(APIView):
+    
+    def _normalize(self, text):
+        text = text.lower()
+        text = re.sub(r'[^\w\s]', '', text) 
+        text = re.sub(r'\s+', ' ', text).strip()
+        return text
+
+    def _speech_to_text(self, audio_path):
+            
+        client = ElevenLabs(
+            api_key=os.getenv("ELEVENLABS_API_KEY")
+        )
+
+        with open(audio_path, 'rb') as f:
+            audio_data = BytesIO(f.read())
+
+        transcription = client.speech_to_text.convert(
+            file=audio_data,
+            model_id="scribe_v1",
+            tag_audio_events=True, 
+            language_code="eng", 
+            diarize=True, 
+        )
+        return re.sub(r'[^\w\s]', '', transcription.text)
+
+
+    def _score_fluency(self, audio_path, transcript): 
+        duration = librosa.get_duration(filename=audio_path)
+        word_count = len(transcript.split())
+        wpm = word_count / (duration / 60)
+        
+        fluency_score = min(wpm / 120 * 9, 9)
+        return round(fluency_score, 1)
+
+    def _score_vocabulary(self, transcript):
+        tokens = nltk.word_tokenize(transcript.lower())
+        words = [w for w in tokens if w.isalpha()]
+        unique_words = set(words)
+        ttr = len(unique_words) / len(words) if words else 0
+        return round(min(ttr * 20, 9), 1)  
+
+    def _score_grammar(self, transcript):
+        words = nltk.word_tokenize(transcript)
+        tagged = nltk.pos_tag(words)
+        bad_tags = [tag for word, tag in tagged if tag in ("UH", "SYM")]  
+        penalty = len(bad_tags)
+        score = max(9 - penalty, 3)  
+        return round(score, 1)
+
+    def _score_content(self, reference_text, predicted_text):
+        reference = self._normalize(reference_text)
+        predicted = self._normalize(predicted_text)
+
+        wer = jiwer.wer(reference, predicted)  
+        content_score = round((1 - wer) * 10, 2)  
+        return content_score, wer
+
+    def _evaluate_speaking(self, audio_path, correct_text):
+        correct_text = re.sub(r'[^\w\s]', '', correct_text)
+
+        transcript = self._speech_to_text(audio_path)
+        fluency = self._score_fluency(audio_path, transcript)
+        vocabulary = self._score_vocabulary(transcript)
+        grammar = self._score_grammar(transcript)
+        content_score, wer = self._score_content(correct_text, transcript)
+
+        return {
+            "content_score": content_score, 
+            "wer": wer,
+            "fluency_score": fluency,
+            "vocabulary_score": vocabulary,
+            "grammar_score": grammar,
+            "transcript": transcript
+        }
+
+    def post(self, request):
+
+        file = request.FILES.get('file_audio')
+        
+        if not file:
+            return Response({'error': 'No file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp:
+            for chunk in file.chunks():
+                tmp.write(chunk)
+            audio_path = tmp.name  
+
+        correct_text = request.data['text']
+
+        return Response(self._evaluate_speaking(audio_path, correct_text), status=status.HTTP_200_OK)
