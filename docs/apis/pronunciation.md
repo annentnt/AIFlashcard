@@ -60,7 +60,7 @@ with open('audio.mp3', 'wb') as f:
 
 - Đường dẫn API
 ```
-http://127.0.0.1:8000/api/pronunciation/evalute/
+http://127.0.0.1:8000/api/pronunciation/evaluate/
 ```
 
 - Gửi phản hồi:
@@ -71,7 +71,7 @@ http://127.0.0.1:8000/api/pronunciation/evalute/
 import requests
 
 response = requests.post(
-    "http://127.0.0.1:8000/api/pronunciation/evalute/", 
+    "http://127.0.0.1:8000/api/pronunciation/evaluate/", 
     files={
         "file_audio": open("audio.mp3", 'rb')
     },
