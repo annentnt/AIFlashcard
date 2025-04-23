@@ -72,7 +72,7 @@ class SentencePronunciation(APIView):
             model_id="eleven_multilingual_v2",
             output_format="mp3_44100_128"
         )
-
+        
         return b''.join(audio)
     
     def post(self, request):
@@ -141,7 +141,7 @@ class Evaluate(APIView):
         predicted = self._normalize(predicted_text)
 
         wer = jiwer.wer(reference, predicted)  
-        content_score = round((1 - wer) * 10, 2)  
+        content_score = round((1 - wer) * 9, 2)  
         return content_score, wer
 
     def _evaluate_speaking(self, audio_path, correct_text):
