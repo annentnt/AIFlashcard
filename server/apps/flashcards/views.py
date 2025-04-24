@@ -3,11 +3,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Topic, Flashcard
+from .models import Topic
 from .serializers import TopicSerializer
-from .utils import call_openai_extract_flashcards
+from rag_engine.rag_manager import RAGManager
+from rag_engine.text_processor import TextProcessor
+from rag_engine.utils import is_content_safe
 
 SUPPORTED_FORMATS = ['.pdf', '.docx', '.pptx', '.txt']
+
 
 class GenerateFlashcardsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -17,20 +20,39 @@ class GenerateFlashcardsView(APIView):
         filename = file.name
         num_flashcards = int(request.POST.get('num_flashcards', 10))
 
-        if not file or not filename.endswith(SUPPORTED_FORMATS):
+        if not file or not filename.endswith(tuple(SUPPORTED_FORMATS)):
             return Response({'error': 'Invalid file format. Supported formats are:' + ' '.join(SUPPORTED_FORMATS)}, status=status.HTTP_400_BAD_REQUEST)
 
-        if file.size > 5 * 1024 * 1024:
-            return Response({'error': 'File too large. Max size is 5MB.'}, status=status.HTTP_400_BAD_REQUEST)
+        # Tăng giới hạn kích thước file khi sử dụng RAG
+        max_size = 20 * 1024 * 1024  # 20MB
+        if file.size > max_size:
+            max_size_mb = max_size / (1024 * 1024)
+            return Response({'error': f'File too large. Max size is {max_size_mb}MB.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Important: pass the file *before reading it*
-        flashcards = call_openai_extract_flashcards(file, filename, num_flashcards)
-
-        if flashcards is None:
+        # Xử lý văn bản với RAG
+        rag_manager = RAGManager()
+        
+        # Kiểm tra an toàn trước khi xử lý
+        text_processor = TextProcessor()
+        text = text_processor.extract_text_from_file(file, filename)
+        
+        if is_content_safe(text):
             return Response({'error': 'Content flagged as unsafe.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({'flashcards': flashcards}, status=status.HTTP_200_OK)
-
+        
+        # Reset file pointer cho việc đọc lại
+        file.seek(0)
+        
+        # Xử lý tài liệu với RAG
+        rag_result = rag_manager.process_document(file, filename, request.user.id)
+        flashcards = rag_manager.generate_flashcards(rag_result['store_id'], request.user.id, num_flashcards)
+        
+        if not flashcards:
+            return Response({'error': 'Failed to generate flashcards.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        return Response({
+            'flashcards': flashcards,
+            'store_id': rag_result['store_id']
+        }, status=status.HTTP_200_OK)
 
 class TopicView(APIView):
     permission_classes = [IsAuthenticated]
