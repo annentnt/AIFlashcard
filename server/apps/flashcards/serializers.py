@@ -1,3 +1,4 @@
+
 from rest_framework import serializers
 from .models import Topic, Flashcard
 
@@ -11,7 +12,7 @@ class TopicSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Topic
-        fields = ['id', 'name', 'flashcards']
+        fields = ['id', 'name', 'flashcards', 'store_id']
 
     def create(self, validated_data):
         flashcards_data = validated_data.pop('flashcards', [])
@@ -24,6 +25,7 @@ class TopicSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
+        instance.store_id = validated_data.get('store_id', instance.store_id)
         instance.save()
 
         new_flashcards_data = validated_data.pop('flashcards', [])
@@ -53,4 +55,3 @@ class TopicSerializer(serializers.ModelSerializer):
         Flashcard.objects.filter(id__in=to_delete_ids).delete()
 
         return instance
-
