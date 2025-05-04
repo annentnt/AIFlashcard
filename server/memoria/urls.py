@@ -25,6 +25,7 @@ urlpatterns = [
     path("api/auth/", include("apps.auth_user.urls")),
     path("api/pronunciation/", include("apps.pronunciation.urls")),
     path('api/chatbot/', include('apps.chatbot.urls')),
+    path('api/knowledge_graph/', include('apps.knowledge_graph.urls')),
 ]
 # Thêm URL cho media files trong development
 if settings.DEBUG:
