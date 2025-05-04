@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "apps.auth_user",
     "apps.pronunciation",
     "apps.chatbot",
+    "apps.knowledge_graph",
 ]
 
 MIDDLEWARE = [
@@ -176,6 +177,7 @@ import os
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+USED_GPT_MODEL = "gpt-4o-mini"
 
 # Cấu hình Media cho lưu trữ vector stores
 MEDIA_URL = '/media/'

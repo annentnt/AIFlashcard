@@ -1,9 +1,10 @@
-
 import fitz  # PyMuPDF
 from docx import Document
 from pptx import Presentation
 import re
-from typing import List, Dict, Any
+from typing import List
+import openai
+from memoria.settings import OPENAI_API_KEY
 
 class TextProcessor:
     def __init__(self, chunk_size=500, chunk_overlap=100):
@@ -93,8 +94,15 @@ class TextProcessor:
             overlapping_chunks.append(current_chunk)
             
         return overlapping_chunks
+    
+    def check_content_safety(self, text: str) -> bool:
+        moderation_client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
+        moderation_response = moderation_client.moderations.create(
+            model="omni-moderation-latest",
+            input=text
+        )
 
+        result = moderation_response.results[0].flagged
 
-
-
+        return result

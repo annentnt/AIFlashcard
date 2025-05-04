@@ -1,4 +1,3 @@
-
 import os
 import uuid
 from django.conf import settings
@@ -50,68 +49,98 @@ class RAGManager:
         return success
     
     
-    def generate_flashcards(self, store_id, user_id, num_flashcards=10, topic_name="Internship"):
-            """Generate flashcards from document using RAG"""
-            import json
+    def generate_flashcards(self, store_id, user_id, num_flashcards):
+        """Generate flashcards from document using RAG"""
+        import json
 
-            # Load the vector store
-            if not self.load_vector_store(store_id, user_id):
-                return None
+        # Load the vector store
+        if not self.load_vector_store(store_id, user_id):
+            return None
 
-            # Combine all text from the vector store
-            all_text = "\n\n".join(self.vector_store.texts)
+        # Combine all text from the vector store
+        all_text = "\n\n".join(self.vector_store.texts)
 
-            
-            prompt = f"""
-        You are a language assistant that helps learners understand new vocabulary from documents.
+        
+        prompt = f"""
+            You are a language assistant that helps learners understand new vocabulary from documents.
 
-        Extract up to {num_flashcards} key vocabulary words or phrases using Named Entity Recognition (NER) and keyphrase extraction.
+            First, extract **all named entities and key phrases** from the document using Named Entity Recognition (NER) and keyphrase extraction techniques. Return them as a flat list of strings, not duplicates.
 
-        For each vocabulary word or phrase:
-        - Include a short, relevant definition in the context of the original text.
+            Then, **select {num_flashcards} of the most important or educational terms** and write short, relevant definitions based on their context in the document.
 
-        Return the output as a JSON object with the following format:
+            Return the output strictly as a JSON object with the following format:
 
-        {{
-        "name": "{topic_name}",
-        "flashcards": [
             {{
-            "vocabulary": "Example term",
-            "description": "Its meaning in context."
-            }},
-            ...
-        ]
-        }}
+                "name": "Topic name",
+                "entities": ["Entity1", "Entity2", ...],
+                "flashcards": [
+                    {{
+                        "vocabulary": "Entity1",
+                        "description": "Its meaning in context."
+                    }},
+                    ...
+                ]
+            }}
 
-        Only return a valid JSON object. Do not add any explanation.
+            Only return a valid JSON object. Do not add any explanation.
             """
 
-            try:
-                response = self.openai_client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": "You are a helpful assistant that returns JSON flashcards."},
-                        {"role": "user", "content": prompt + "\n\n" + all_text}
-                    ],
-                    temperature=0.3,
-                    response_format={"type": "json_object"}
-                )
-
-                raw_output = response.choices[0].message.content
-                result = json.loads(raw_output)
-
-                # Kiểm tra structure đúng như mong muốn
-                if "name" in result and "flashcards" in result:
-                    return result
-                else:
-                    raise ValueError("Response JSON missing required keys")
-
-            except Exception as e:
-                print(f"[ERROR] generate_flashcards failed: {e}")
-                return {
-                    "name": topic_name,
-                    "flashcards": []
+        try:
+            response = self.openai_client.responses.create(
+                model=settings.USED_GPT_MODEL,
+                input=[
+                    {"role": "system", "content": prompt},
+                    {"role": "user", "content": all_text}
+                ],
+                temperature=0.3,
+                text={
+                    "format": {
+                        "type": "json_schema",
+                        "name": "flashcard_list",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "name" : {"type": "string"},
+                                "entities": {
+                                    "type": "array",
+                                    "items": {"type": "string"}
+                                },
+                                "flashcards": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "vocabulary": {"type": "string"},
+                                            "description": {"type": "string"}
+                                        },
+                                        "required": ["vocabulary", "description"],
+                                        "additionalProperties": False
+                                    }
+                                }
+                            },
+                            "required": ["name", "entities", "flashcards"],
+                            "additionalProperties": False
+                        },
+                        "strict": True
+                    }
                 }
+            )
+
+            result = json.loads(response.output_text)
+
+            # Kiểm tra structure đúng như mong muốn
+            if "name" in result and "flashcards" in result and "entities" in result:
+                return result
+            else:
+                raise ValueError("Response JSON missing required keys")
+
+        except Exception as e:
+            print(f"[ERROR] generate_flashcards failed: {e}")
+            return {
+                "name": '',
+                "flashcards": [],
+                "entities": []
+            }
 
     def answer_question(self, store_id, user_id, question):
         """Answer a question using RAG"""
@@ -127,7 +156,7 @@ class RAGManager:
         
         # Generate answer
         response = self.openai_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=settings.USED_GPT_MODEL,
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that answers questions based on the provided context. If you don't know the answer based on the context, say so."},
                 {"role": "user", "content": f"Context: {context}\n\nQuestion: {question}"}
@@ -136,4 +165,3 @@ class RAGManager:
         )
         
         return response.choices[0].message.content
-    
