@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "apps.pronunciation",
     "apps.chatbot",
     "apps.knowledge_graph",
+    "apps.learn",
 ]
 
 MIDDLEWARE = [

@@ -20,8 +20,6 @@
         - Number of flashcards created
     - Filter documents with risk of attack
 
-    **TODO:** add a moderation layer.
-    
 2. Learn from flashcards:
     - User chooses a topic
         -> Each flashcard pops up to the screen. There will be 3 situations that can happen:
@@ -43,7 +41,7 @@
         - Unlearnt words
         - Learnt words
 
-4. Edit flashcards:
+4. Edit flashcards: **DONE**
     - User can edit each flashcard in a topic and save.
 
 5. Word pronunciation: **DONE**
@@ -51,28 +49,23 @@
     - If user wants to listen to pronunciation of the word, click on the "Play" button next to the IPA.
         -> Pronunciation learning
 
-6. Pronunciation learning: --> LINH
+6. Pronunciation learning: --> LINH **DONE**
     - If user wants to check his/her pronunciation and compare it with the word pronunciation, click on "Check your pronunciation".
     - System checks user's pronunciation and score it, then send it back to user. User can retry pronunciation checking to reach a higher score.
 
 <!-- 7. Intonation learning:
     - After learning a word's pronunciation, if user wants to pronounce it in a sentence example, user can enter "Intonation practice", system will generate a sentence including the word. Then user checks intonation and receive a score. -->
 
-8. QnA Chatbot:
+8. QnA Chatbot: **DONE**
     - If user wants to ask about a vocabulary in any topic they have created, user can use Chatbot to ask.
     - Chatbot will answer to user information about the word user asked. Note that all information the chatbot answers is from the document user submit, not related to any extra information.
 
 ## Technical implementation
-1. Create a set of flashcards:
+1. Create a set of flashcards: **DONE**
     - User submit a document with some config numbers (number of flashcards created) -> FE sends the document to BE through API post request -> BE calls ChatGPT API to extract vocabularies in the document (abort if the document contains violent content)-> BE sends back to FE the extracted data -> FE displays the data in the form of a flashcard set and allows user to adjust each flashcard -> User confirms creating the final flashcard set -> FE sends the final set to BE and BE saves the set to database.
 
-8. QnA chatbot:
-    - When creating a topic from a document, system creates a knowledge graph from the document
-    -> Each topic will have one knowledge graph.
-    - When user asks about any word, system use RAG to query the word from the related knowledge graph and then respond to user the query's result.
-
-- Knowledge graph --> PHÚC
-- Flashcard similarity when displaying flashcards in "Learning with flashcards" --> PHÚC
+- Knowledge graph --> PHÚC **DONE**
+- Flashcard similarity when displaying flashcards in "Learning with flashcards" --> PHÚC **DONE**
 
 ## Stakeholders:
 - Admin
