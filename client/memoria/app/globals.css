@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #0e6e36;
+  --primary-light: #25b45e;
+  --background: #e8f5ee;
+}
+
+body {
+  background-color: var(--background);
+  min-height: 100vh;
+}
+
+.navbar {
+  background-color: var(--primary);
+  color: white;
+  padding: 1rem;
+}
+
+.btn-primary {
+  background-color: var(--primary-light);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-outline {
+  background-color: white;
+  color: var(--primary);
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  border: 1px solid var(--primary);
+  transition: all 0.2s;
+}
+
+.btn-outline:hover {
+  background-color: var(--primary);
+  color: white;
+}
+
+.input-field {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid #ccc;
+  outline: none;
+}
+
+.input-field:focus {
+  border-color: var(--primary);
+}
