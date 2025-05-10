@@ -36,6 +36,10 @@ class WordPronunciation(APIView):
                 audio_url = phonetics['audio']
                 ipa = phonetics['text']        
                 break
+
+            if 'audio' in phonetics and 'text' in phonetics:
+                audio_url = phonetics['audio']
+                ipa = phonetics['text']  
         
         for meanings in data[0]['meanings']:
             if 'definitions' in meanings and 'example' in meanings['definitions'][0]:

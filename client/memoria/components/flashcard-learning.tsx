@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight, Volume2, RefreshCw, Mic, ArrowLeft } from "lucide-react"
+import HoldToRecordButton from "./HoldToRecordButton";
 
 // Sample flashcard data for different decks
 const flashcardData = {
@@ -151,8 +152,32 @@ export default function FlashcardLearning() {
 
     // Use the Web Speech API for demonstration purposes
     if ("speechSynthesis" in window) {
-      const utterance = new SpeechSynthesisUtterance(currentCard.term)
-      window.speechSynthesis.speak(utterance)
+      // const utterance = new SpeechSynthesisUtterance(currentCard.term)
+      // window.speechSynthesis.speak(utterance)
+      const text = currentCard.term; // hoặc từ bất kỳ
+
+      fetch('http://127.0.0.1:8000/api/pronunciation/sentence/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Không lấy được audio từ server');
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          const audioUrl = URL.createObjectURL(blob);
+          const audio = new Audio(audioUrl);
+          audio.play();
+        })
+        .catch(error => {
+          console.error('Lỗi khi tải phát âm:', error);
+        });
+
     }
   }
 
@@ -162,8 +187,32 @@ export default function FlashcardLearning() {
 
     // Use the Web Speech API for demonstration purposes
     if ("speechSynthesis" in window) {
-      const utterance = new SpeechSynthesisUtterance(currentCard.example)
-      window.speechSynthesis.speak(utterance)
+      // const utterance = new SpeechSynthesisUtterance(currentCard.example)
+      // window.speechSynthesis.speak(utterance)
+      const text = currentCard.example; // hoặc từ bất kỳ
+
+      fetch('http://127.0.0.1:8000/api/pronunciation/sentence/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Không lấy được audio từ server');
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          const audioUrl = URL.createObjectURL(blob);
+          const audio = new Audio(audioUrl);
+          audio.play();
+        })
+        .catch(error => {
+          console.error('Lỗi khi tải phát âm:', error);
+        });
+
     }
   }
 
@@ -289,7 +338,8 @@ export default function FlashcardLearning() {
                   onClick={handleCheckPronunciation}
                   className="text-center text-green-500 hover:underline cursor-pointer block mx-auto"
                 >
-                  (Check Pronunciation)
+                  {/* (Check Pronunciation) */}
+                  <HoldToRecordButton />
                 </button>
               </>
             )}
@@ -343,7 +393,8 @@ export default function FlashcardLearning() {
                   onClick={handleCheckPronunciation}
                   className="text-center text-green-500 hover:underline cursor-pointer"
                 >
-                  (Check Pronunciation)
+                  {/* (Check Pronunciation) */}
+                  <HoldToRecordButton />
                 </button>
               </div>
             )}
