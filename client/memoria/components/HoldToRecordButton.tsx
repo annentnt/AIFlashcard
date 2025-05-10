@@ -3,28 +3,31 @@
 import { useRef, useState } from 'react';
 import { Mic } from 'lucide-react';
 
-export default function MicRecorderButton() {
-  const mediaRecorderRef = useRef(null);
+interface props {
+  onComplete: (audioUrl: string) => void;
+}
+
+export default function MicRecorderButton({ onComplete }: props) {
+  // const mediaRecorderRef = useRef(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+
   const [isRecording, setIsRecording] = useState(false);
 
   const handleStartRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
-      const chunks = [];
+      const chunks: BlobPart[] = [];
 
       mediaRecorderRef.current.ondataavailable = (e) => {
         if (e.data.size > 0) chunks.push(e.data);
       };
 
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const blob = new Blob(chunks, { type: 'audio/webm'});
         const audioURL = URL.createObjectURL(blob);
         console.log('Ghi âm xong! Audio URL:', audioURL);
-
-        // 🎧 Tùy chọn: tự động phát lại hoặc gửi blob đi
-        const audio = new Audio(audioURL);
-        audio.play();
+        onComplete(audioURL);
       };
 
       mediaRecorderRef.current.start();

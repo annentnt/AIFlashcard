@@ -10,7 +10,6 @@ import tempfile
 from dotenv import load_dotenv
 from io import BytesIO
 import re, librosa, os, nltk, jiwer, requests
-
 # Create your views here.
 load_dotenv()
 
@@ -173,10 +172,11 @@ class Evaluate(APIView):
         if not file:
             return Response({'error': 'No file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
         
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
             for chunk in file.chunks():
                 tmp.write(chunk)
             audio_path = tmp.name  
+            print(audio_path)
 
         correct_text = request.data['text']
 
