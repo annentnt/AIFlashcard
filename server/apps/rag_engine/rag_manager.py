@@ -60,7 +60,6 @@ class RAGManager:
         # Combine all text from the vector store
         all_text = "\n\n".join(self.vector_store.texts)
 
-        
         prompt = f"""
             You are a language assistant that helps learners understand new vocabulary from documents.
 
