@@ -216,9 +216,38 @@ export default function FlashcardLearning() {
     }
   }
 
-  const handleCheckPronunciation = () => {
+  const handleCheckPronunciation = (audioURL: string) => {
     // In a real app, this would use speech recognition to check pronunciation
     // For demo purposes, we'll randomly determine if it's correct or incorrect
+    console.log("hello world check pronunciation")
+    console.log(audioURL);
+    const audio = new Audio(audioURL);
+    audio.play();
+    
+    fetch(audioURL)
+    .then(response => response.blob())
+    .then(blob => {
+      const formData = new FormData();
+      formData.append("file_audio", blob, "audio.webm");
+      formData.append("text", currentCard.term);
+      console.log(formData.get("file_audio"));  // File {name: '...', ...}
+      console.log(formData.get("text"));       // "hello everyone"
+
+
+      return fetch("http://127.0.0.1:8000/api/pronunciation/evaluate/", {
+          method: "POST",
+          body: formData
+        });
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("Evaluation result:", data);
+      })
+      .catch(error => {
+        console.error("Error during evaluation:", error);
+    });
+
+
     const isCorrect = Math.random() > 0.5
     setPronunciationResult(isCorrect ? "correct" : "incorrect")
 
@@ -335,11 +364,11 @@ export default function FlashcardLearning() {
                 </div>
 
                 <button
-                  onClick={handleCheckPronunciation}
+                  // onClick={handleCheckPronunciation}
                   className="text-center text-green-500 hover:underline cursor-pointer block mx-auto"
                 >
                   {/* (Check Pronunciation) */}
-                  <HoldToRecordButton />
+                  <HoldToRecordButton onComplete={handleCheckPronunciation}/>
                 </button>
               </>
             )}
@@ -390,11 +419,11 @@ export default function FlashcardLearning() {
                 </div>
 
                 <button
-                  onClick={handleCheckPronunciation}
+                  // onClick={handleCheckPronunciation}
                   className="text-center text-green-500 hover:underline cursor-pointer"
                 >
                   {/* (Check Pronunciation) */}
-                  <HoldToRecordButton />
+                  <HoldToRecordButton onComplete={handleCheckPronunciation}/>
                 </button>
               </div>
             )}
