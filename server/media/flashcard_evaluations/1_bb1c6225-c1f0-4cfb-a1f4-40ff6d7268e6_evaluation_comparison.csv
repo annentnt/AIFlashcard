@@ -1,5 +1,0 @@
-Metric,SentenceTransformer,Gemini
-Content Coverage,0.365841418534627,0.95
-Semantic Precision,0.530651843547821,0.98
-Semantic Recall,0.477586659193039,0.9275
-Semantic F1,0.5027227991505673,0.9525
