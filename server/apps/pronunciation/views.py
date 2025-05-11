@@ -151,7 +151,7 @@ class Evaluate(APIView):
         correct_text = re.sub(r'[^\w\s]', '', correct_text)
 
         transcript = self._speech_to_text(audio_path)
-        fluency = self._score_fluency(audio_path, transcript)
+        # fluency = self._score_fluency(audio_path, transcript)
         vocabulary = self._score_vocabulary(transcript)
         grammar = self._score_grammar(transcript)
         content_score, wer = self._score_content(correct_text, transcript)
@@ -159,7 +159,7 @@ class Evaluate(APIView):
         return {
             "content_score": content_score, 
             "wer": wer,
-            "fluency_score": fluency,
+            # "fluency_score": fluency,
             "vocabulary_score": vocabulary,
             "grammar_score": grammar,
             "transcript": transcript
@@ -176,7 +176,7 @@ class Evaluate(APIView):
             for chunk in file.chunks():
                 tmp.write(chunk)
             audio_path = tmp.name  
-            print(audio_path)
+            # print(audio_path)
 
         correct_text = request.data['text']
 

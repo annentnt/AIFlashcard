@@ -216,48 +216,43 @@ export default function FlashcardLearning() {
     }
   }
 
-  const handleCheckPronunciation = (audioURL: string) => {
-    // In a real app, this would use speech recognition to check pronunciation
-    // For demo purposes, we'll randomly determine if it's correct or incorrect
-    console.log("hello world check pronunciation")
-    console.log(audioURL);
-    const audio = new Audio(audioURL);
-    audio.play();
-    
-    fetch(audioURL)
-    .then(response => response.blob())
-    .then(blob => {
-      const formData = new FormData();
-      formData.append("file_audio", blob, "audio.webm");
-      formData.append("text", currentCard.term);
-      console.log(formData.get("file_audio"));  // File {name: '...', ...}
-      console.log(formData.get("text"));       // "hello everyone"
+ const handleCheckPronunciation = async (audioURL: string) => {
+  console.log(audioURL);
 
+  // const audio = new Audio(audioURL);
+  // audio.play();
 
-      return fetch("http://127.0.0.1:8000/api/pronunciation/evaluate/", {
-          method: "POST",
-          body: formData
-        });
-      })
-      .then(response => response.json())
-      .then(data => {
-        console.log("Evaluation result:", data);
-      })
-      .catch(error => {
-        console.error("Error during evaluation:", error);
+  try {
+    const response = await fetch(audioURL);
+    const blob = await response.blob();
+
+    const formData = new FormData();
+    formData.append("file_audio", blob, "audio.webm");
+    formData.append("text", currentCard.term);
+
+    const evaluationResponse = await fetch("http://127.0.0.1:8000/api/pronunciation/evaluate/", {
+      method: "POST",
+      body: formData
     });
 
+    const data = await evaluationResponse.json();
+    console.log("Evaluation result:", data);
 
-    const isCorrect = Math.random() > 0.5
-    setPronunciationResult(isCorrect ? "correct" : "incorrect")
+    const isCorrect = data.war === 0 || data.content_score > 8;
+    console.log("Evaluate: ", isCorrect);
 
-    // Set the appropriate state based on where we're checking pronunciation from
+    setPronunciationResult(isCorrect ? "correct" : "incorrect");
+
     if (cardState === "term") {
-      setCardState("pronunciation-check")
+      setCardState("pronunciation-check");
     } else if (cardState === "intonation-practice") {
-      setCardState("intonation-pronunciation-check")
+      setCardState("intonation-pronunciation-check");
     }
+  } catch (error) {
+    console.error("Error during evaluation:", error);
   }
+};
+
 
   const handleRetry = () => {
     setPronunciationResult(null)
