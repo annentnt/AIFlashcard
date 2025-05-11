@@ -2,6 +2,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from multipledispatch import dispatch
 import re
+import os
+from django.conf import settings
 
 from apps.knowledge_graph.models import Graph, GraphNode, GraphRelationship
 
@@ -109,7 +111,7 @@ class KnowledgeGraphManager:
         # Convert to networkx graph
         self._convert_to_networkx_graph()
 
-    def visualize_graph(self):
+    def visualize_graph(self, topic_id):
         """
         Visualize the current networkx graph using matplotlib.
         """
@@ -125,7 +127,8 @@ class KnowledgeGraphManager:
         nx.draw_networkx_edge_labels(self.nx_graph, pos, edge_labels=edge_labels, font_color='red')
         plt.title(f"Knowledge Graph: {self.graph_data['name']}")
         plt.axis('off')
-        plt.tight_layout()
+        # plt.tight_layout()
+        plt.savefig(os.path.join(settings.GRAPHS_DIR, str(topic_id) + '.png'))
         plt.show()
 
     def sort_flashcards_by_similarity(self, flashcard_names: list[str]) -> list[str]:
