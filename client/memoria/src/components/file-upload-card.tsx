@@ -2,17 +2,29 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Upload, FileText, Check, AlertCircle, Loader, MessageSquare } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import FlashcardDeckManager from './flashcard-deck-manager';
+
+interface FlashcardsData {
+  name: string;
+  flashcards: { vocabulary: string; description: string }[];
+  entities: any[];
+  original_text: string;
+  store_id: string;
+}
 
 export default function FileUploadCard() {
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [flashcardsData, setFlashcardsData] = useState(null);
+
+  const [flashcardsData, setFlashcardsData] = useState<FlashcardsData | null>(null);
   const [activeTab, setActiveTab] = useState('file');
   const [textContent, setTextContent] = useState('');
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showDeckModal, setShowDeckModal] = useState(false);
   
   // Settings state
   const [deckName, setDeckName] = useState('');
@@ -29,8 +41,8 @@ export default function FileUploadCard() {
     }
   }, []);
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       // Check if file is of supported format
       const supportedFormats = ['.pdf', '.docx', '.pptx', '.txt'];
@@ -46,11 +58,11 @@ export default function FileUploadCard() {
     }
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e : React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = (e : React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
     if (droppedFile) {
@@ -140,68 +152,20 @@ export default function FileUploadCard() {
       setSuccess(true);
     } catch (err) {
       console.error('Error generating flashcards:', err);
-      setError(err.message || 'An error occurred while generating flashcards');
+      if (err instanceof Error) {
+        setError(err.message || 'An error occurred while generating flashcards');
+      } else {
+        setError('An unknown error occurred while generating flashcards');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSaveTopic = async () => {
-    if (!flashcardsData) return;
-    
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      // Check if we have the access token
-      if (!accessToken) {
-        throw new Error('You are not authenticated. Please log in first.');
-      }
-
-      const response = await fetch('http://127.0.0.1:8000/api/flashcards/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
-        },
-        body: JSON.stringify({
-          name: flashcardsData.name,
-          flashcards: flashcardsData.flashcards,
-          entities: flashcardsData.entities,
-          original_text: flashcardsData.original_text,
-          store_id: flashcardsData.store_id
-        }),
-        credentials: 'same-origin',
-      });
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Authentication expired. Please log in again.');
-        }
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save topic');
-      }
-      
-      // Reset form after successful save
-      setSuccess(true);
-      setFile(null);
-      setTextContent('');
-      setFlashcardsData(null);
-      
-      // Navigate to deck manager page with the new deck
-      const responseData = await response.json();
-      if (responseData && responseData.id) {
-        window.location.href = `/deck-manager?id=${responseData.id}&name=${encodeURIComponent(responseData.name)}`;
-      } else {
-        // Fallback to homepage if we don't have the ID
-        window.location.href = '/';
-      }
-    } catch (err) {
-      console.error('Error saving topic:', err);
-      setError(err.message || 'An error occurred while saving the topic');
-      setIsLoading(false);
-    }
-  };
+  const router = useRouter();
+  const handleOpenDeckManager = () => {
+    setShowDeckModal(true);
+  };  
 
   // New function to open chatbot with the current store_id
   const handleOpenChatbot = () => {
@@ -232,7 +196,7 @@ export default function FileUploadCard() {
             <p className="text-gray-500 text-sm mb-4">Supported formats: PDF, DOCX, PPTX, TXT</p>
             <button 
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
-              onClick={() => fileInputRef.current.click()}
+              onClick={() => fileInputRef.current?.click()}
             >
               Browse files
             </button>
@@ -270,17 +234,7 @@ export default function FileUploadCard() {
             <h2 className="text-lg font-medium">Flashcard settings</h2>
           </div>
           
-          <div className="p-4 space-y-4">
-            <div>
-              <label className="block text-gray-700 mb-1">Deck Name</label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md"
-                value={deckName}
-                onChange={(e) => setDeckName(e.target.value)}
-              />
-            </div>
-            
+          <div className="p-4 space-y-4">          
             <div>
               <label className="block text-gray-700 mb-1">Number of flashcards</label>
               <input
@@ -313,7 +267,7 @@ export default function FileUploadCard() {
     
     return (
       <div className="mt-6 bg-white p-4 rounded-lg border border-green-200">
-        <h3 className="text-lg font-medium text-green-700 mb-3">Generated Flashcards - {flashcardsData.name}</h3>
+        <h3 className="text-lg font-medium text-green-700 mb-3">{flashcardsData.name}</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           {flashcardsData.flashcards.slice(0, 4).map((card, index) => (
@@ -333,7 +287,7 @@ export default function FileUploadCard() {
         <div className="mt-6 flex justify-center space-x-4">
           <button
             className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg flex items-center"
-            onClick={handleSaveTopic}
+            onClick={handleOpenDeckManager}
           >
             <Check className="h-5 w-5 mr-2" />
             Edit flashcard deck
@@ -435,6 +389,31 @@ export default function FileUploadCard() {
           )}
         </button>
       </div>
+
+      {showDeckModal && flashcardsData && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex justify-center items-center">
+          <button
+            onClick={() => setShowDeckModal(false)}
+            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+          >
+            ✕
+          </button>
+          <div className="bg-white rounded-lg w-full max-w-4xl p-6 relative max-h-[90vh] overflow-y-auto">
+            <FlashcardDeckManager
+              initialFlashcards={
+                flashcardsData.flashcards.map((fc, index) => ({
+                  id: String(index), // assign temporary ID
+                  ...fc
+                }))
+              }
+              deckName={flashcardsData.name}
+              originalText={flashcardsData.original_text}
+              storeId={flashcardsData.store_id}
+              entities={flashcardsData.entities}
+            />
+          </div>
+        </div>
+      )}
       
       {/* Settings Modal */}
       {renderSettingsModal()}
@@ -444,6 +423,7 @@ export default function FileUploadCard() {
       
       {/* Flashcard Preview */}
       {renderFlashcardPreview()}
+
     </div>
   );
 }

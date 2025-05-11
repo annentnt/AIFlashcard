@@ -9,7 +9,7 @@ export default function CreateFlashcard() {
       <Navbar />
       <main className="flex-grow px-4 py-8 max-w-6xl mx-auto w-full">
         <div className="bg-green-700 text-white p-4 rounded-t-2xl">
-          <h1 className="text-xl font-medium text-center">Convert files or text into Memoria Flash card</h1>
+          <h1 className="text-xl font-medium text-center">Convert files or text into Memoria flashcards</h1>
         </div>
 
         <div className="bg-white p-6 rounded-b-2xl shadow-sm mb-12">

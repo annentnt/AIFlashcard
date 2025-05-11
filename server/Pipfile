@@ -24,6 +24,8 @@ langchain-openai = "*"
 networkx = "*"
 matplotlib = "*"
 multipledispatch = "*"
+pandas = "*"
+seaborn = "*"
 
 [dev-packages]
 
