@@ -11,7 +11,6 @@ from rag_engine.rag_manager import RAGManager
 
 class ConversationView(APIView):
     permission_classes = [IsAuthenticated]
-    
     def get(self, request):
         """Get all conversations for a user"""
         conversations = Conversation.objects.filter(user=request.user).order_by('-updated_at')
@@ -30,7 +29,6 @@ class ConversationView(APIView):
 
 class ConversationDetailView(APIView):
     permission_classes = [IsAuthenticated]
-    
     def get_object(self, pk, user):
         try:
             return Conversation.objects.get(pk=pk, user=user)
@@ -57,7 +55,6 @@ class ConversationDetailView(APIView):
 
 class ChatView(APIView):
     permission_classes = [IsAuthenticated]
-    
     def post(self, request):
         """Send a message and get a response"""
         conversation_id = request.data.get('conversation_id')

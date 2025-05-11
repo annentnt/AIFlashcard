@@ -1,15 +1,24 @@
 import os
 import uuid
+import json
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 from django.conf import settings
 import openai
 from .text_processor import TextProcessor
 from .vector_store import VectorStore
+# Remove the FlashcardEvaluator import
+from .gemini__flashcard_evaluator import ImprovedGeminiFlashcardEvaluator
 
 
 class RAGManager:
     def __init__(self):
         self.text_processor = TextProcessor()
         self.vector_store = VectorStore()
+        # Remove the FlashcardEvaluator initialization
+        # Initialize only the Gemini evaluator with your API key
+        self.gemini_evaluator = ImprovedGeminiFlashcardEvaluator(api_key=settings.GEMINI_API_KEY)
         self.openai_client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
         
     def process_document(self, file, filename, user_id):
@@ -38,7 +47,8 @@ class RAGManager:
         return {
             "store_id": store_id,
             "chunk_count": len(chunks),
-            "store_path": store_path
+            "store_path": store_path,
+            "full_text": text  # Return the full text for evaluation
         }
     
     def process_raw_text(self, text, user_id):
@@ -89,7 +99,6 @@ class RAGManager:
 
         # Combine all text from the vector store
         all_text = "\n\n".join(self.vector_store.texts)
-
         prompt = f"""
             You are a language assistant that helps learners understand new vocabulary from documents.
 
@@ -157,8 +166,10 @@ class RAGManager:
 
             result = json.loads(response.output_text)
 
-            # Kiểm tra structure đúng như mong muốn
+            # Check structure is as expected
             if "name" in result and "flashcards" in result and "entities" in result:
+                # Evaluate the flashcards with only Gemini
+                self.evaluate_and_save_flashcards(result, all_text, user_id, store_id)
                 return result
             else:
                 raise ValueError("Response JSON missing required keys")
@@ -170,7 +181,41 @@ class RAGManager:
                 "flashcards": [],
                 "entities": []
             }
-
+    
+    def evaluate_and_save_flashcards(self, flashcards_data, original_text, user_id, store_id):
+        """Evaluate generated flashcards using only Gemini evaluator"""
+        try:
+            # Create evaluation directories if they don't exist
+            eval_dir = os.path.join(settings.MEDIA_ROOT, 'flashcard_evaluations')
+            os.makedirs(eval_dir, exist_ok=True)
+            
+            # Only evaluate with Gemini
+            try:
+                gemini_evaluation_results = self.gemini_evaluator.evaluate_flashcards(
+                    flashcards_data,
+                    original_text
+                )
+                
+                # Save Gemini evaluation results
+                gemini_output_path = os.path.join(eval_dir, f"{user_id}_{store_id}_gemini_evaluation.png")
+                self.gemini_evaluator.visualize_results(gemini_evaluation_results, gemini_output_path)
+                
+                # Save the results as JSON
+                results_json_path = os.path.join(eval_dir, f"{user_id}_{store_id}_gemini_evaluation.json")
+                with open(results_json_path, 'w', encoding='utf-8') as f:
+                    json.dump(gemini_evaluation_results, f, indent=2)
+                
+                print(f"Gemini flashcard evaluation completed and saved")
+                return True
+                
+            except Exception as gemini_error:
+                print(f"[ERROR] Gemini evaluation failed: {gemini_error}")
+                return False
+            
+        except Exception as e:
+            print(f"[ERROR] Flashcard evaluation failed: {e}")
+            return False
+            
     def answer_question(self, store_id, user_id, question):
         """Answer a question using RAG"""
         # Load the vector store
