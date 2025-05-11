@@ -20,7 +20,6 @@ class RAGManager:
         # Chunk the text
         chunks = self.text_processor.chunk_text(text)
 
-
         # Create metadata for each chunk
         metadatas = [{
             "source": filename,
@@ -36,6 +35,37 @@ class RAGManager:
         store_path = os.path.join(settings.MEDIA_ROOT, 'vector_stores', f"{user_id}_{store_id}.pkl")
         self.vector_store.save(store_path)
         
+        return {
+            "store_id": store_id,
+            "chunk_count": len(chunks),
+            "store_path": store_path
+        }
+    
+    def process_raw_text(self, text, user_id):
+        """
+        Process raw text (not from a file), create chunks and build a vector store for it.
+        """
+        import uuid
+        import os
+
+        # Chunk the raw text
+        chunks = self.text_processor.chunk_text(text)
+
+        # Create metadata for each chunk
+        metadatas = [{
+            "source": "raw_text",
+            "chunk_index": i,
+            "user_id": user_id
+        } for i in range(len(chunks))]
+
+        # Add to vector store
+        self.vector_store.add_texts(chunks, metadatas)
+
+        # Save vector store
+        store_id = str(uuid.uuid4())
+        store_path = os.path.join(settings.MEDIA_ROOT, 'vector_stores', f"{user_id}_{store_id}.pkl")
+        self.vector_store.save(store_path)
+
         return {
             "store_id": store_id,
             "chunk_count": len(chunks),
