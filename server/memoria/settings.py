@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "apps.chatbot",
     "apps.knowledge_graph",
     "apps.learn",
+    "apps.learn_history",
 ]
 
 MIDDLEWARE = [
@@ -158,7 +159,7 @@ SIMPLE_JWT = {
     "SIGNING_KEY": SECRET_KEY,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
-
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # React app URL
 ]
