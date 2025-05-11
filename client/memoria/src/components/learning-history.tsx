@@ -1,6 +1,5 @@
 "use client"
-
-import { useState } from "react"
+import React, { useEffect, useState } from 'react';
 import { Trash2, ArrowLeft, X } from "lucide-react"
 import DeleteDeckModal from "./delete-deck"
 import AIChatInterface from "./ai-chat"
@@ -34,13 +33,51 @@ const mindmapData = {
   },
 }
 
+function cardCountStatus(id_topic: string, status: string) {
+  return fetch(`http://127.0.0.1:8000/api/learn_history/status/${status}`)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    })
+    .then((data) => {
+      let filtered = data.filter((item: any) => item.id_topic === id_topic);
+
+      if (status) {
+        filtered = filtered.filter((item: any) => item.status === status);
+      }
+
+      console.log(`Card count for topic ${id_topic} with status "${status}":`, filtered.length);
+      return filtered.length;
+    })
+    .catch((error) => {
+      console.error("Fetch error:", error);
+      return 0;
+    });
+}
+
 export default function LearningHistory() {
   const router = useRouter()
-  const [decks, setDecks] = useState<Deck[]>([
-    { id: "1", name: "FRUITS", cardCount: 30 },
-    { id: "2", name: "ANIMALS", cardCount: 45 },
-    { id: "3", name: "COUNTRIES", cardCount: 25 },
-  ])
+  const [decks, setDecks] = useState<Deck[]>([]);
+  const [cnt_newcards, setNewCardCount] = useState(0);
+  const [cnt_learntcards, setLearntCardCount] = useState(0);
+
+  useEffect(() => {
+    async function loadDecks() {
+      const countNew = await cardCountStatus("fruits", "new");
+      const countLearnt= await cardCountStatus("fruits", "learnt");
+      const countAll = countNew + countLearnt;
+      setDecks([{ id: "1", name: "FRUITS", cardCount: countAll }]);
+    }
+
+    loadDecks();
+
+    cardCountStatus("fruits", "new").then((count) => setNewCardCount(count));
+    cardCountStatus("fruits", "learnt").then((count) => setLearntCardCount(count));
+
+  }, []);
+
 
   const [deletingDeckId, setDeletingDeckId] = useState<string | null>(null)
   const [viewingMindmapId, setViewingMindmapId] = useState<string | null>(null)
@@ -265,33 +302,33 @@ export default function LearningHistory() {
               <p className="font-medium mb-3">Number of card: {deck.cardCount}</p>
 
               <div className="flex flex-wrap gap-2 mb-4">
-                <button
-                  onClick={() => handleLearnNewWords(deck.id)}
+                <div
+                  // onClick={() => handleLearnNewWords(deck.id)}
                   className="bg-green-200 text-green-800 px-3 py-1 rounded-2xl hover:bg-green-300 transition-colors"
                 >
-                  Learn new words
-                </button>
+                  Learn new words: {cnt_newcards}
+                </div>
 
-                <button
+                {/* <button
                   onClick={() => handleLearnAllWords(deck.id)}
                   className="bg-green-200 text-green-800 px-3 py-1 rounded-2xl hover:bg-green-300 transition-colors"
                 >
                   Learn all words
-                </button>
+                </button> */}
 
-                <button
+                {/* <button
                   onClick={() => handleLearnUnlearntWords(deck.id)}
                   className="bg-green-200 text-green-800 px-3 py-1 rounded-2xl hover:bg-green-300 transition-colors"
                 >
-                  {deck.id === "1" ? "Relearn unlearnt words" : "Learn unlearnt words"}
-                </button>
+                  Relearn unlearnt words + {cnt_unlearnt_words}
+                </button> */}
 
-                <button
-                  onClick={() => handleRelearnLearntWords(deck.id)}
+                <div
+                  // onClick={() => handleRelearnLearntWords(deck.id)}
                   className="bg-green-200 text-green-800 px-3 py-1 rounded-2xl hover:bg-green-300 transition-colors"
                 >
-                  Relearn learnt words
-                </button>
+                  Relearn learnt words: {cnt_learntcards}
+                </div>
               </div>
             </div>
 

@@ -12,7 +12,7 @@ class QeStatus(APIView):
             DeskHistory.objects.create(
                 id_flashcard = request.POST.get("id_flashcard"),
                 id_topic = request.POST.get("id_topic"),
-                status = "new"
+                status = Qstatus
             ).save()
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
