@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight, Volume2, RefreshCw, Mic, Bug } from "lucide-react"
 import HoldToRecordButton from "./hold-to-record-button";
+import { useRouter } from "next/navigation" // Import router for redirecting
 
 // Kiểm tra cấu trúc của flashcard từ API
 type Flashcard = {
@@ -26,6 +27,7 @@ interface LearningParams {
 }
 
 export default function DebugFlashcardLearning() {
+  const router = useRouter() // Initialize the router
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [cardState, setCardState] = useState<CardState>("term")
   const [topicName, setTopicName] = useState("")
@@ -39,6 +41,30 @@ export default function DebugFlashcardLearning() {
   // Add states to track the learned and unlearned flashcards
   const [keptInMindFlashcards, setKeptInMindFlashcards] = useState<Flashcard[]>([])
   const [learnAgainFlashcards, setLearnAgainFlashcards] = useState<Flashcard[]>([])
+  
+  // Check if we need to initialize the flashcard arrays from localStorage
+  useEffect(() => {
+    const storedKeptInMind = localStorage.getItem("keptInMindFlashcards");
+    const storedLearnAgain = localStorage.getItem("learnAgainFlashcards");
+    
+    if (storedKeptInMind) {
+      try {
+        setKeptInMindFlashcards(JSON.parse(storedKeptInMind));
+      } catch (e) {
+        console.error("Error parsing kept in mind flashcards:", e);
+        localStorage.removeItem("keptInMindFlashcards");
+      }
+    }
+    
+    if (storedLearnAgain) {
+      try {
+        setLearnAgainFlashcards(JSON.parse(storedLearnAgain));
+      } catch (e) {
+        console.error("Error parsing learn again flashcards:", e);
+        localStorage.removeItem("learnAgainFlashcards");
+      }
+    }
+  }, []);
 
   // Load learning parameters and flashcards
   useEffect(() => {
@@ -164,7 +190,57 @@ export default function DebugFlashcardLearning() {
   const handleNextCard = () => {
     setCardState("term")
     setPronunciationResult(null)
-    setCurrentCardIndex((prev) => (prev < flashcards.length - 1 ? prev + 1 : prev))
+    
+    // Check if this is the last card
+    if (currentCardIndex >= flashcards.length - 1) {
+      // This is the last card, redirect to the learning history page
+      redirectToLearningHistory();
+    } else {
+      // Not the last card, just go to the next one
+      setCurrentCardIndex((prev) => prev + 1);
+    }
+  }
+  
+  // Function to redirect to learning history page
+  const redirectToLearningHistory = () => {
+    // Make sure learning stats are saved to localStorage before redirecting
+    const topicId = learningParams?.topicId || "unknown";
+    
+    // Save the current session stats for this topic
+    const learningStats = {
+      topicId,
+      topicName: learningParams?.topicName || "Unknown Topic",
+      keptInMindCount: keptInMindFlashcards.length,
+      learnAgainCount: learnAgainFlashcards.length,
+      timestamp: new Date().toISOString()
+    };
+    
+    localStorage.setItem("lastLearningSession", JSON.stringify(learningStats));
+    
+    // Update topic-specific counts
+    let topicStats = {};
+    try {
+      const savedTopicStats = localStorage.getItem("topicStats");
+      if (savedTopicStats) {
+        topicStats = JSON.parse(savedTopicStats);
+      }
+      
+      topicStats = {
+        ...topicStats,
+        [topicId]: {
+          learnt: keptInMindFlashcards.length,
+          unlearnt: learnAgainFlashcards.length,
+          timestamp: new Date().toISOString()
+        }
+      };
+      
+      localStorage.setItem("topicStats", JSON.stringify(topicStats));
+    } catch (e) {
+      console.error("Error saving topic stats:", e);
+    }
+    
+    // Now redirect to the learning history page
+    router.push("/learning-history");
   }
 
   const handleShowAnswer = () => {
@@ -252,21 +328,27 @@ export default function DebugFlashcardLearning() {
       if (rating === "forgot") {
         newStatus = "unlearnt";
         
-        // Add to learn again flashcards
-        setLearnAgainFlashcards(prev => [...prev, currentFlashcard]);
-        
-        // Store in localStorage for access in other pages
-        localStorage.setItem("learnAgainFlashcards", 
-          JSON.stringify([...learnAgainFlashcards, currentFlashcard]));
+        // Add to learn again flashcards (avoid duplicates by ID)
+        const exists = learnAgainFlashcards.some(card => card.id === currentFlashcard.id);
+        if (!exists) {
+          const updatedLearnAgain = [...learnAgainFlashcards, currentFlashcard];
+          setLearnAgainFlashcards(updatedLearnAgain);
+          
+          // Store in localStorage for access in other pages
+          localStorage.setItem("learnAgainFlashcards", JSON.stringify(updatedLearnAgain));
+        }
       } else if (rating === "easy") {
         newStatus = "learnt";
         
-        // Add to kept in mind flashcards
-        setKeptInMindFlashcards(prev => [...prev, currentFlashcard]);
-        
-        // Store in localStorage for access in other pages
-        localStorage.setItem("keptInMindFlashcards", 
-          JSON.stringify([...keptInMindFlashcards, currentFlashcard]));
+        // Add to kept in mind flashcards (avoid duplicates by ID)
+        const exists = keptInMindFlashcards.some(card => card.id === currentFlashcard.id);
+        if (!exists) {
+          const updatedKeptInMind = [...keptInMindFlashcards, currentFlashcard];
+          setKeptInMindFlashcards(updatedKeptInMind);
+          
+          // Store in localStorage for access in other pages
+          localStorage.setItem("keptInMindFlashcards", JSON.stringify(updatedKeptInMind));
+        }
       }
       
       // Send the status update to the API
@@ -291,8 +373,14 @@ export default function DebugFlashcardLearning() {
       console.error("Error updating flashcard status:", error);
     }
     
-    // Move to the next card
-    handleNextCard();
+    // Check if this is the last card
+    if (currentCardIndex >= flashcards.length - 1) {
+      // This is the last card, redirect to the learning history page
+      redirectToLearningHistory();
+    } else {
+      // Move to the next card
+      handleNextCard();
+    }
   }
 
   const handleBackToTopics = () => {

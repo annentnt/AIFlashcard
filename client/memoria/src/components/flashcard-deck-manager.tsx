@@ -93,6 +93,17 @@ export default function FlashcardDeckManager({
       })
       .then(data => {
         setSaveSuccess(true)
+
+        // Lưu store_id vào localStorage để dùng sau
+        if (storeId) {
+          localStorage.setItem("currentAIChatStoreId", storeId)
+        }
+
+        // Nếu có topic name, bạn có thể lưu luôn:
+        if (deckName) {
+          localStorage.setItem("currentAIChatTopicName", deckName)
+        }
+
         window.location.href = `/learn`
       })
       .catch(err => {

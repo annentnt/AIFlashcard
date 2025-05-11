@@ -13,18 +13,22 @@ interface Message {
 
 export default function AIChatPage() {
   const searchParams = useSearchParams();
-  const storeId = searchParams?.get('storeId') || "";
-  
-  // Kiểm tra nếu không có storeId trong URL, thử đọc từ localStorage
-  useEffect(() => {
-    if (!storeId) {
-      const storedStoreId = localStorage.getItem("currentAIChatStoreId");
-      if (storedStoreId) {
-        // Nếu đọc được từ localStorage, có thể redirect hoặc sử dụng giá trị đó
-        console.log("Using storeId from localStorage:", storedStoreId);
-      }
+    const [storeId, setStoreId] = useState("");
+
+    // Ưu tiên lấy từ URL, fallback sang localStorage
+    useEffect(() => {
+    const idFromUrl = searchParams?.get('storeId');
+    if (idFromUrl) {
+        setStoreId(idFromUrl);
+    } else {
+        const stored = localStorage.getItem("currentAIChatStoreId");
+        if (stored) {
+        console.log("Using storeId from localStorage:", stored);
+        setStoreId(stored); // ✅ Gán lại vào state
+        }
     }
-  }, [storeId]);
+    }, [searchParams]);
+
 
   // Nếu có storeId, render component AIChatInterface
   return (
