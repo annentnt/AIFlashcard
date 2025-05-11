@@ -143,7 +143,7 @@ export default function LearningHistory() {
             >
               <X size={20} />
             </button>
-            <AIChatInterface deckName={mindmapDeck.name} onClose={handleCloseChat} />
+            <AIChatInterface storeId="8844d825-832b-4574-942d-d1e25b088663" onClose={handleCloseChat} />
           </div>
         ) : (
           <>
