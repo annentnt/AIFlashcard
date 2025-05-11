@@ -24,9 +24,9 @@ export default function Footer() {
           </div>
 
           <div className="text-sm space-y-1 text-green-100">
-            <p>MEMMORIA EDUCATION CO. LTD</p>
+            <p>MEMORIA EDUCATION CO. LTD</p>
             <p>Business Registration No: 0000000</p>
-            <p>Address: 127 Nguyen Van CU St, Street, 7 District,</p>
+            <p>Address: 127 Nguyen Van Cu St, Street, 7 District,</p>
             <p>Ho Chi Minh City</p>
             <p>Email: contact@memoria.edu.vn</p>
             <p>Hotline: +1800-0000</p>
@@ -38,11 +38,6 @@ export default function Footer() {
           <ul className="space-y-2 text-green-100">
             <li>
               <Link href="#" className="hover:text-white">
-                High school exam prep
-              </Link>
-            </li>
-            <li>
-              <Link href="#" className="hover:text-white">
                 Flashcards
               </Link>
             </li>
@@ -51,42 +46,11 @@ export default function Footer() {
                 Pronunciation
               </Link>
             </li>
-            <li>
-              <Link href="#" className="hover:text-white">
-                Download and check
-              </Link>
-            </li>
-            <li>
-              <Link href="#" className="hover:text-white">
-                Online edu.vn
-              </Link>
-            </li>
           </ul>
         </div>
 
         <div>
-          <h3 className="font-medium mb-4">App & Social Media</h3>
-          <p className="text-green-100 mb-2">Download the app</p>
-          <div className="flex gap-2 mb-4">
-            <Link href="#" className="block">
-              <Image
-                src="/google.png"
-                alt="Play Store"
-                width={120}
-                height={40}
-                className="h-10 w-auto"
-              />
-            </Link>
-            <Link href="#" className="block">
-              <Image
-                src="/appstore.png"
-                alt="App Store"
-                width={120}
-                height={40}
-                className="h-10 w-auto"
-              />
-            </Link>
-          </div>
+          <h3 className="font-medium mb-4">Social Media</h3>
 
           <p className="text-green-100 mb-2">Follow us</p>
           <div className="flex gap-3">

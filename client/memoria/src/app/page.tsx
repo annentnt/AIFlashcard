@@ -1,10 +1,14 @@
+"use client"
+
 import Image from "next/image"
 import { Button } from "@/src/components/ui/button"
 import Navbar from "@/src/components/navbar"
 import Footer from "@/src/components/footer"
 import Link from "next/link"
+import { useAuth } from "../context/AuthContext"
 
 export default function Home() {
+  const { isAuthenticated, login, logout} = useAuth();
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -18,9 +22,15 @@ export default function Home() {
                 <h2 className="text-green-800 text-xl font-medium mb-2">Welcome to</h2>
                 <h1 className="text-5xl font-bold text-green-900 italic mb-4">Memoria</h1>
                 <p className="text-green-800 text-xl mb-6">What do you want to learn today?</p>
+                {isAuthenticated ? (
+                  <Link href={'/topics'} className="btn-primary px-8 py-3">
+                  Learn with your flashcards
+                </Link>
+                ) : (
                   <Link href="/login" className="btn-primary px-8 py-3">
-                      Log in
+                    Log in
                   </Link>
+                )}
               </div>
               <div className="w-full md:w-1/2 flex justify-center">
             <img src="/flashcard_illustration.png" alt="Minh họa" className="max-w-full h-auto" />

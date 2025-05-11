@@ -20,7 +20,7 @@ from memoria.settings import DEFAULT_FROM_EMAIL
 
 
 class RegisterView(APIView):
-    permission_classes = (IsAuthenticated,)
+    # permission_classes = (IsAuthenticated,)
     
     def post(self, request):
         serializer = UserSerializer(data=request.data)
@@ -34,7 +34,7 @@ class RegisterView(APIView):
 
             # Send email
             subject = "Xác nhận đăng ký tài khoản - Memoria"
-            html_message = render_to_string("auth/confirm_email.html", {"user": user, "activation_link": verification_link})
+            html_message = render_to_string("auth_user/confirm_email.html", {"user": user, "activation_link": verification_link})
             plain_message = strip_tags(html_message)  # Fallback for non-HTML email clients
             recipient_list = [user.email]
 
@@ -50,14 +50,14 @@ class ActivateAccountView(APIView):
             uid = force_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            return redirect("http://localhost:3000/sign-up-verification/failed")  # Redirect to failure page
+            return redirect("http://localhost:3000/verification-failed/")  # Redirect to failure page
 
         if default_token_generator.check_token(user, token):
             user.is_active = True
             user.save()
-            return redirect(f"http://localhost:3000/sign-up-verification/successful/{uidb64}/{token}/")  # Redirect to success page
+            return redirect(f"http://localhost:3000/account-success/")  # Redirect to success page
         else:
-            return redirect("http://localhost:3000/sign-up-verification/failed")  # Redirect to failure page
+            return redirect("http://localhost:3000/verification-failed/")  # Redirect to failure page
         
 
 class SignInView(APIView):
@@ -73,12 +73,12 @@ class SignInView(APIView):
                 {
                     "access": str(refresh.access_token),
                     "refresh": str(refresh),
-                    "message": "Đăng nhập thành công!",
+                    "message": "Log in successfully!",
                 },
                 status=status.HTTP_200_OK,
             )
         return Response(
-            {"error": "Username hoặc mật khẩu không đúng!"},
+            {"error": "Neither username or password is right!"},
             status=status.HTTP_401_UNAUTHORIZED,
         )
     
@@ -109,7 +109,7 @@ class RequestPasswordResetView(APIView):
 
         # Send email
         subject = "Đặt lại mật khẩu cho tài khoản - Memoria"
-        html_message = render_to_string("auth/reset_password_email.html", {"user": user, "reset_link": reset_link})
+        html_message = render_to_string("auth_user/reset_password_email.html", {"user": user, "reset_link": reset_link})
         plain_message = strip_tags(html_message)  # Fallback for non-HTML email clients
         recipient_list = [user.email]
 
