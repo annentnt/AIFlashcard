@@ -1,88 +1,44 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ChevronLeft, ChevronRight, Volume2, RefreshCw, Mic, ArrowLeft } from "lucide-react"
+import { ChevronLeft, ChevronRight, Volume2, RefreshCw, Mic, Bug } from "lucide-react"
 import HoldToRecordButton from "./hold-to-record-button";
 
-// Sample flashcard data for different decks
-const flashcardData = {
-  "1": [
-    {
-      id: "1",
-      term: "Apple",
-      answer: "A round fruit that is sweet and grows on trees.",
-      pronunciation: "/ˈæp.əl/",
-      example: "She eats an apple daily.",
-      status: "new",
-    },
-    {
-      id: "2",
-      term: "Orange",
-      answer: "A round juicy citrus fruit with a tough bright orange skin.",
-      pronunciation: "/ˈɒr.ɪndʒ/",
-      example: "I prefer orange juice with pulp.",
-      status: "learnt",
-    },
-    {
-      id: "3",
-      term: "Pineapple",
-      answer: "A tropical plant with a large, juicy, edible fruit.",
-      pronunciation: "/ˈpaɪn.æp.əl/",
-      example: "Pineapple is often used in tropical desserts.",
-      status: "unlearnt",
-    },
-    {
-      id: "4",
-      term: "Banana",
-      answer: "A long curved fruit with a yellow skin and soft sweet flesh.",
-      pronunciation: "/bəˈnɑː.nə/",
-      example: "Monkeys love to eat bananas.",
-      status: "new",
-    },
-  ],
-  "2": [
-    {
-      id: "1",
-      term: "Lion",
-      answer: "A large wild cat with a mane around its face.",
-      pronunciation: "/ˈlaɪ.ən/",
-      example: "The lion is known as the king of the jungle.",
-      status: "new",
-    },
-    {
-      id: "2",
-      term: "Elephant",
-      answer: "A very large animal with a long trunk and tusks.",
-      pronunciation: "/ˈel.ɪ.fənt/",
-      example: "Elephants have excellent memory.",
-      status: "learnt",
-    },
-    {
-      id: "3",
-      term: "Dolphin",
-      answer: "A marine mammal known for its intelligence and playful behavior.",
-      pronunciation: "/ˈdɒl.fɪn/",
-      example: "Dolphins communicate using clicks and whistles.",
-      status: "unlearnt",
-    },
-  ],
+// Kiểm tra cấu trúc của flashcard từ API
+type Flashcard = {
+  id: string;
+  vocabulary: string;
+  meaning?: string;        // Có thể là meaning
+  description?: string;    // Hoặc có thể là description
+  pronunciation?: string;
+  example?: string;
+  status?: "new" | "learnt" | "unlearnt";
+  // Thêm các trường khác có thể có
+  [key: string]: any;      // Cho phép bất kỳ trường nào khác
 }
 
-type CardState = "term" | "answer" | "pronunciation-check" | "intonation-practice" | "intonation-pronunciation-check"
+type CardState = "term" | "answer" | "pronunciation-check" | "debug"
 
 interface LearningParams {
-  deckId: string
-  mode: string
-  deckName: string
+  topicId: string;
+  mode: string;
+  topicName: string;
 }
 
-export default function FlashcardLearning() {
+export default function DebugFlashcardLearning() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [cardState, setCardState] = useState<CardState>("term")
-  const [topicName, setTopicName] = useState("TOPIC'S NAME")
-  const [pronunciationResult, setPronunciationResult] = useState<"correct" | "incorrect" | null>(null)
-  const [flashcards, setFlashcards] = useState<any[]>([])
+  const [topicName, setTopicName] = useState("")
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([])
   const [learningParams, setLearningParams] = useState<LearningParams | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [pronunciationResult, setPronunciationResult] = useState<"correct" | "incorrect" | null>(null)
+  const [rawApiResponse, setRawApiResponse] = useState<any>(null)
+  
+  // Add states to track the learned and unlearned flashcards
+  const [keptInMindFlashcards, setKeptInMindFlashcards] = useState<Flashcard[]>([])
+  const [learnAgainFlashcards, setLearnAgainFlashcards] = useState<Flashcard[]>([])
 
   // Load learning parameters and flashcards
   useEffect(() => {
@@ -91,44 +47,113 @@ export default function FlashcardLearning() {
       if (storedParams) {
         const params = JSON.parse(storedParams) as LearningParams
         setLearningParams(params)
-        setTopicName(params.deckName)
+        setTopicName(params.topicName)
 
-        // Get flashcards for the deck
-        const allDeckFlashcards = flashcardData[params.deckId as keyof typeof flashcardData] || []
-
-        // Filter flashcards based on the learning mode
-        let filteredFlashcards = [...allDeckFlashcards]
-
-        if (params.mode === "new") {
-          filteredFlashcards = allDeckFlashcards.filter((card) => card.status === "new")
-        } else if (params.mode === "unlearnt") {
-          filteredFlashcards = allDeckFlashcards.filter((card) => card.status === "unlearnt")
-        } else if (params.mode === "learnt") {
-          filteredFlashcards = allDeckFlashcards.filter((card) => card.status === "learnt")
+        // Get authentication token
+        const token = localStorage.getItem("accessToken")
+        
+        if (!token) {
+          setError("You need to be logged in to view flashcards.")
+          setIsLoading(false)
+          return
         }
-
-        setFlashcards(filteredFlashcards)
+        
+        // Fetch flashcards for the topic from the API
+        fetchFlashcards(params.topicId, params.mode, token)
       } else {
-        // Default to the first deck if no params are found
-        setFlashcards(flashcardData["1"])
+        setError("No topic selected. Please select a topic first.")
+        setIsLoading(false)
       }
     } catch (error) {
       console.error("Error loading learning params:", error)
-      // Default to the first deck if there's an error
-      setFlashcards(flashcardData["1"])
+      setError("Error loading learning parameters. Please try again.")
+      setIsLoading(false)
     }
   }, [])
 
-  // If no flashcards are loaded yet, show a loading state
-  if (flashcards.length === 0) {
-    return (
-      <div className="flex items-center justify-center min-h-[300px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-700"></div>
-      </div>
-    )
-  }
-
-  const currentCard = flashcards[currentCardIndex]
+  const fetchFlashcards = async (topicId: string, mode: string, token: string) => {
+    try {
+      // Fetch topic details including all flashcards
+      console.log(`Fetching flashcards for topic ID: ${topicId}`);
+      // Cập nhật URL API thành /api/learn/:id/ như bạn đề cập
+      const response = await fetch(`http://127.0.0.1:8000/api/learn/${topicId}/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        credentials: 'same-origin',
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication expired. Please log in again.');
+        }
+        throw new Error(`Failed to fetch flashcards: ${response.status} ${response.statusText}`);
+      }
+      
+      const topicData = await response.json();
+      console.log("RAW API RESPONSE:", topicData);
+      setRawApiResponse(topicData); // Lưu lại full response để debug
+      
+      // Extract flashcards from the topic data
+      let allFlashcards = topicData.flashcards || [];
+      console.log("All flashcards extracted:", allFlashcards);
+      
+      if (allFlashcards.length === 0) {
+        console.warn("No flashcards found in API response");
+      }
+      
+      // Kiểm tra cấu trúc của flashcard đầu tiên nếu có
+      if (allFlashcards.length > 0) {
+        console.log("First flashcard structure:", allFlashcards[0]);
+      }
+      
+      // Convert API flashcards to our format - checking many possible field names
+      const formattedFlashcards = allFlashcards.map((card: any) => {
+        // Tìm content hoặc meaning hoặc description
+        const meaningContent = card.meaning || card.description || card.content || "No meaning provided";
+        
+        return {
+          id: card.id,
+          vocabulary: card.vocabulary || card.term || card.word || "Unknown Term",
+          meaning: meaningContent,
+          description: meaningContent, // Đảm bảo cả 2 trường đều có giá trị 
+          pronunciation: card.pronunciation || "",
+          example: card.example || "",
+          status: card.status || "new",
+          // Lưu toàn bộ dữ liệu gốc để debug
+          _original: card
+        };
+      });
+      
+      console.log("Formatted flashcards:", formattedFlashcards);
+      
+      // Filter flashcards based on the learning mode
+      let filteredFlashcards = [...formattedFlashcards];
+      
+      if (mode === "new") {
+        filteredFlashcards = formattedFlashcards.filter((card) => card.status === "new");
+      } else if (mode === "unlearnt") {
+        filteredFlashcards = formattedFlashcards.filter((card) => card.status === "unlearnt");
+      } else if (mode === "learnt") {
+        filteredFlashcards = formattedFlashcards.filter((card) => card.status === "learnt");
+      }
+      
+      console.log("Filtered flashcards for mode", mode, ":", filteredFlashcards);
+      
+      if (filteredFlashcards.length === 0) {
+        setError(`No ${mode} flashcards available for this topic.`);
+      } else {
+        setFlashcards(filteredFlashcards);
+      }
+      
+    } catch (err: any) {
+      console.error("Error fetching flashcards:", err);
+      setError(err.message || "Failed to load flashcards");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handlePrevCard = () => {
     setCardState("term")
@@ -145,167 +170,179 @@ export default function FlashcardLearning() {
   const handleShowAnswer = () => {
     setCardState("answer")
   }
-
-  const handlePlaySound = () => {
-    // In a real app, this would play the pronunciation audio
-    console.log("Playing sound for:", currentCard.term)
-
-    // Use the Web Speech API for demonstration purposes
-    if ("speechSynthesis" in window) {
-      // const utterance = new SpeechSynthesisUtterance(currentCard.term)
-      // window.speechSynthesis.speak(utterance)
-      const text = currentCard.term; // hoặc từ bất kỳ
-
-      fetch('http://127.0.0.1:8000/api/pronunciation/sentence/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text }),
-      })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Không lấy được audio từ server');
-          }
-          return response.blob();
-        })
-        .then(blob => {
-          const audioUrl = URL.createObjectURL(blob);
-          const audio = new Audio(audioUrl);
-          audio.play();
-        })
-        .catch(error => {
-          console.error('Lỗi khi tải phát âm:', error);
-        });
-
-    }
+  
+  const handleShowDebug = () => {
+    setCardState("debug")
   }
+  
+  const handleCheckPronunciation = async (audioURL: string) => {
+    console.log(audioURL);
 
-  const handlePlayExample = () => {
-    // In a real app, this would play the example sentence audio
-    console.log("Playing example:", currentCard.example)
+    try {
+      const response = await fetch(audioURL);
+      const blob = await response.blob();
 
-    // Use the Web Speech API for demonstration purposes
-    if ("speechSynthesis" in window) {
-      // const utterance = new SpeechSynthesisUtterance(currentCard.example)
-      // window.speechSynthesis.speak(utterance)
-      const text = currentCard.example; // hoặc từ bất kỳ
+      const formData = new FormData();
+      formData.append("file_audio", blob, "audio.webm");
+      formData.append("text", flashcards[currentCardIndex].vocabulary);
 
-      fetch('http://127.0.0.1:8000/api/pronunciation/sentence/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text }),
-      })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Không lấy được audio từ server');
-          }
-          return response.blob();
-        })
-        .then(blob => {
-          const audioUrl = URL.createObjectURL(blob);
-          const audio = new Audio(audioUrl);
-          audio.play();
-        })
-        .catch(error => {
-          console.error('Lỗi khi tải phát âm:', error);
-        });
+      const evaluationResponse = await fetch("http://127.0.0.1:8000/api/pronunciation/evaluate/", {
+        method: "POST",
+        body: formData
+      });
 
-    }
-  }
+      const data = await evaluationResponse.json();
+      console.log("Evaluation result:", data);
 
- const handleCheckPronunciation = async (audioURL: string) => {
-  console.log(audioURL);
+      const isCorrect = data.war === 0 || data.content_score > 8;
+      console.log("Evaluate: ", isCorrect);
 
-  // const audio = new Audio(audioURL);
-  // audio.play();
-
-  try {
-    const response = await fetch(audioURL);
-    const blob = await response.blob();
-
-    const formData = new FormData();
-    formData.append("file_audio", blob, "audio.webm");
-    formData.append("text", currentCard.term);
-
-    const evaluationResponse = await fetch("http://127.0.0.1:8000/api/pronunciation/evaluate/", {
-      method: "POST",
-      body: formData
-    });
-
-    const data = await evaluationResponse.json();
-    console.log("Evaluation result:", data);
-
-    const isCorrect = data.war === 0 || data.content_score > 8;
-    console.log("Evaluate: ", isCorrect);
-
-    setPronunciationResult(isCorrect ? "correct" : "incorrect");
-
-    if (cardState === "term") {
+      setPronunciationResult(isCorrect ? "correct" : "incorrect");
       setCardState("pronunciation-check");
-    } else if (cardState === "intonation-practice") {
-      setCardState("intonation-pronunciation-check");
+    } catch (error) {
+      console.error("Error during evaluation:", error);
     }
-  } catch (error) {
-    console.error("Error during evaluation:", error);
-  }
-};
-
+  };
 
   const handleRetry = () => {
-    setPronunciationResult(null)
+    setPronunciationResult(null);
+    setCardState("term");
+  }
 
-    // Return to the appropriate state based on where we came from
-    if (cardState === "pronunciation-check") {
-      setCardState("term")
-    } else if (cardState === "intonation-pronunciation-check") {
-      setCardState("intonation-practice")
+  const handlePlaySound = () => {
+    if (!flashcards[currentCardIndex]) return;
+    
+    const text = flashcards[currentCardIndex].vocabulary;
+
+    fetch('http://127.0.0.1:8000/api/pronunciation/sentence/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Could not get audio from server');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+        audio.play();
+      })
+      .catch(error => {
+        console.error('Error playing pronunciation:', error);
+      });
+  }
+
+  const handleRating = async (rating: "forgot" | "easy") => {
+    if (!flashcards[currentCardIndex] || !learningParams) return;
+    
+    const currentFlashcard = flashcards[currentCardIndex];
+    
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) return;
+      
+      // Update the flashcard status based on the rating
+      let newStatus = currentFlashcard.status;
+      
+      if (rating === "forgot") {
+        newStatus = "unlearnt";
+        
+        // Add to learn again flashcards
+        setLearnAgainFlashcards(prev => [...prev, currentFlashcard]);
+        
+        // Store in localStorage for access in other pages
+        localStorage.setItem("learnAgainFlashcards", 
+          JSON.stringify([...learnAgainFlashcards, currentFlashcard]));
+      } else if (rating === "easy") {
+        newStatus = "learnt";
+        
+        // Add to kept in mind flashcards
+        setKeptInMindFlashcards(prev => [...prev, currentFlashcard]);
+        
+        // Store in localStorage for access in other pages
+        localStorage.setItem("keptInMindFlashcards", 
+          JSON.stringify([...keptInMindFlashcards, currentFlashcard]));
+      }
+      
+      // Send the status update to the API
+      await fetch(`http://127.0.0.1:8000/api/flashcards/card/${currentFlashcard.id}/`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      
+      // Update the local state
+      const updatedFlashcards = [...flashcards];
+      updatedFlashcards[currentCardIndex] = {
+        ...updatedFlashcards[currentCardIndex],
+        status: newStatus
+      };
+      setFlashcards(updatedFlashcards);
+      
+    } catch (error) {
+      console.error("Error updating flashcard status:", error);
     }
-  }
-
-  const handleRating = (rating: "forgot" | "almost" | "easy") => {
-    // In a real app, this would update the spaced repetition a2xlorithm
-    console.log(`Card rated as: ${rating}`)
-
+    
     // Move to the next card
-    handleNextCard()
+    handleNextCard();
   }
 
-  const handleIntonationPractice = () => {
-    // Switch to intonation practice mode
-    setCardState("intonation-practice")
+  const handleBackToTopics = () => {
+    window.location.href = "/topics";
   }
 
-  const handleBackToTerm = () => {
-    setCardState("term")
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[300px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-700"></div>
+      </div>
+    )
   }
 
-  // Display a message if there are no flashcards for the selected mode
-  if (flashcards.length === 0) {
+  if (error) {
     return (
       <div className="max-w-3xl mx-auto py-8 px-4 text-center">
         <div className="bg-green-200 text-green-800 px-6 py-2 rounded-full font-medium mb-8 inline-block">
-          {topicName}
+          {topicName || "Topic"}
         </div>
-        <p className="text-2xl mb-4">No flashcards available for this learning mode.</p>
+        <p className="text-2xl mb-4">{error}</p>
         <button
-          onClick={() => {
-            try {
-              localStorage.removeItem("learningParams")
-            } catch (error) {
-              console.error("Error removing learning params:", error)
-            }
-            window.location.href = "/history"
-          }}
+          onClick={handleBackToTopics}
           className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-2xl"
         >
-          Back to Learning History
+          Back to Topics
         </button>
       </div>
     )
   }
+
+  // If there are no flashcards, show message
+  if (flashcards.length === 0) {
+    return (
+      <div className="max-w-3xl mx-auto py-8 px-4 text-center">
+        <div className="bg-green-200 text-green-800 px-6 py-2 rounded-full font-medium mb-8 inline-block">
+          {topicName || "Topic"}
+        </div>
+        <p className="text-2xl mb-4">No flashcards available for this learning mode.</p>
+        <button
+          onClick={handleBackToTopics}
+          className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-2xl"
+        >
+          Back to Topics
+        </button>
+      </div>
+    )
+  }
+
+  const currentCard = flashcards[currentCardIndex];
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4 flex flex-col items-center">
@@ -331,21 +368,21 @@ export default function FlashcardLearning() {
           <div className="absolute top-0 left-0 p-4 text-gray-500 text-sm">
             {currentCardIndex + 1}/{flashcards.length}
           </div>
-
-          {(cardState === "intonation-practice" || cardState === "intonation-pronunciation-check") && (
-            <button
-              onClick={handleBackToTerm}
-              className="absolute top-0 left-12 p-4 text-gray-500 hover:text-gray-700"
-              aria-label="Back to term"
+          
+          <div className="absolute top-0 right-0 p-4">
+            <button 
+              onClick={handleShowDebug}
+              className="text-gray-500 hover:text-red-500"
+              title="Show Debug Info"
             >
-              <ArrowLeft size={20} />
+              <Bug size={18} />
             </button>
-          )}
+          </div>
 
           <div className="pt-8 pb-4">
             {cardState === "term" && (
               <>
-                <h2 className="text-xl font-bold text-center mb-4">{currentCard.term}</h2>
+                <h2 className="text-xl font-bold text-center mb-4">{currentCard.vocabulary}</h2>
 
                 <div className="flex justify-center items-center gap-2 mb-2">
                   <button
@@ -355,26 +392,35 @@ export default function FlashcardLearning() {
                   >
                     <Volume2 size={20} />
                   </button>
-                  <span className="text-gray-600">{currentCard.pronunciation}</span>
+                  <span className="text-gray-600">{currentCard.pronunciation || ""}</span>
                 </div>
 
-                <button
-                  // onClick={handleCheckPronunciation}
-                  className="text-center text-green-500 hover:underline cursor-pointer block mx-auto"
-                >
-                  {/* (Check Pronunciation) */}
-                  <HoldToRecordButton onComplete={handleCheckPronunciation}/>
-                </button>
+                <div className="text-center">
+                  <HoldToRecordButton onComplete={handleCheckPronunciation} />
+                </div>
               </>
             )}
 
             {cardState === "answer" && (
               <>
-                <p className="text-center mb-8">{currentCard.answer}</p>
-                <p className="text-center font-medium mb-4">How well did you remember it?</p>
+                <h2 className="text-xl font-bold text-center mb-4">{currentCard.vocabulary}</h2>
+                
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h3 className="font-medium text-green-800 mb-2">Meaning:</h3>
+                  <p className="text-center mb-4">
+                    {currentCard.meaning || currentCard.description || "No meaning provided"}
+                  </p>
+                  
+                  {currentCard.example && (
+                    <>
+                      <h3 className="font-medium text-green-800 mb-2">Example:</h3>
+                      <p className="text-center italic">"{currentCard.example}"</p>
+                    </>
+                  )}
+                </div>
               </>
             )}
-
+            
             {cardState === "pronunciation-check" && (
               <div className="flex flex-col items-center justify-center py-4">
                 <p className="text-xl font-bold mb-8">
@@ -385,59 +431,39 @@ export default function FlashcardLearning() {
                     <RefreshCw size={16} />
                     Retry
                   </button>
-                  <span className="text-gray-300">|</span>
-                  <button
-                    onClick={handleIntonationPractice}
-                    className="flex items-center gap-1 text-blue-500 hover:text-blue-700"
-                  >
-                    <Mic size={16} />
-                    Intonation practice
+                  <button onClick={handleShowAnswer} className="flex items-center gap-1 text-green-500 hover:text-green-700">
+                    Show Answer
                   </button>
                 </div>
               </div>
             )}
-
-            {cardState === "intonation-practice" && (
-              <div className="flex flex-col items-center justify-center py-4">
-                <p className="text-center mb-6">
-                  {currentCard.example} <span className="text-gray-500">(Example)</span>
-                </p>
-
-                <div className="flex justify-center items-center mb-4">
-                  <button
-                    onClick={handlePlayExample}
-                    className="flex items-center gap-2 text-green-500 hover:text-green-700"
-                  >
-                    <Volume2 size={20} />
-                    <span>(Play)</span>
-                  </button>
-                </div>
-
-                <button
-                  // onClick={handleCheckPronunciation}
-                  className="text-center text-green-500 hover:underline cursor-pointer"
+            
+            {cardState === "debug" && (
+              <div className="overflow-auto max-h-96 text-xs font-mono">
+                <h3 className="font-bold mb-2">Current Flashcard Raw Data:</h3>
+                <pre className="bg-gray-100 p-3 rounded overflow-x-auto">
+                  {JSON.stringify(currentCard, null, 2)}
+                </pre>
+                
+                <h3 className="font-bold mt-4 mb-2">Available Fields:</h3>
+                <ul className="list-disc pl-5 mb-4">
+                  {Object.keys(currentCard).filter(k => !k.startsWith('_')).map(key => (
+                    <li key={key}>
+                      <strong>{key}:</strong> {
+                        typeof currentCard[key] === 'object' 
+                          ? JSON.stringify(currentCard[key]) 
+                          : String(currentCard[key])
+                      }
+                    </li>
+                  ))}
+                </ul>
+                
+                <button 
+                  onClick={() => setCardState("term")}
+                  className="bg-blue-500 text-white px-3 py-1 rounded text-sm mt-2"
                 >
-                  {/* (Check Pronunciation) */}
-                  <HoldToRecordButton onComplete={handleCheckPronunciation}/>
+                  Back to Card
                 </button>
-              </div>
-            )}
-
-            {cardState === "intonation-pronunciation-check" && (
-              <div className="flex flex-col items-center justify-center py-4">
-                <p className="text-xl font-bold mb-8">
-                  {pronunciationResult === "correct" ? "Correct!" : "Incorrect!"}
-                </p>
-                <div className="flex gap-4">
-                  <button onClick={handleRetry} className="flex items-center gap-1 text-green-500 hover:text-green-700">
-                    <RefreshCw size={16} />
-                    Retry
-                  </button>
-                  <span className="text-gray-300">|</span>
-                  <button onClick={handleBackToTerm} className="text-green-500 hover:text-green-700">
-                    Back to card?
-                  </button>
-                </div>
               </div>
             )}
           </div>
@@ -487,20 +513,12 @@ export default function FlashcardLearning() {
             <ChevronLeft size={24} />
           </button>
 
-          <div className="flex gap-4">
-            <button
-              onClick={handlePlaySound}
-              className="bg-green-200 text-green-800 px-4 py-2 rounded-2xl hover:bg-green-300 transition-colors"
-            >
-              Play sound!!
-            </button>
-            <button
-              onClick={handleIntonationPractice}
-              className="bg-green-200 text-green-800 px-4 py-2 rounded-2xl hover:bg-green-300 transition-colors"
-            >
-              Innotation practice
-            </button>
-          </div>
+          <button
+            onClick={handlePlaySound}
+            className="bg-green-200 text-green-800 px-4 py-2 rounded-2xl hover:bg-green-300 transition-colors"
+          >
+            Play sound
+          </button>
 
           <button
             onClick={handleNextCard}

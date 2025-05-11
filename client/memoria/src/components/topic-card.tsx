@@ -50,9 +50,19 @@ export default function TopicList() {
     }
   };
 
-  // Navigate to topic detail page
-  const handleTopicClick = (topicId) => {
-    window.location.href = `/learn?id=${topicId}`;
+  // Navigate to topic detail page and save learning parameters
+  const handleTopicClick = (topic) => {
+    // Store learning parameters in localStorage
+    const learningParams = {
+      topicId: topic.id,
+      mode: "all", // Default to show all cards
+      topicName: topic.name
+    };
+    
+    localStorage.setItem("learningParams", JSON.stringify(learningParams));
+    
+    // Navigate to the learning page
+    window.location.href = `/learn`;
   };
 
   if (isLoading) {
@@ -87,7 +97,7 @@ export default function TopicList() {
           <div 
             key={topic.id}
             className="bg-white rounded-lg shadow-sm border border-green-100 p-6 cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => handleTopicClick(topic.id)}
+            onClick={() => handleTopicClick(topic)}
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-medium text-green-700">{topic.name}</h3>
