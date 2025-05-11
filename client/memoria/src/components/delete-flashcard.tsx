@@ -14,7 +14,7 @@ export default function DeleteFlashcardModal({ onConfirm, onCancel }: DeleteFlas
         <div className="p-6 text-center">
           <h2 className="text-lg font-medium mb-6">Do you want to delete this flashcard?</h2>
 
-          <div className="grid grid-cols-2 gap-0">
+          <div className="grid grid-cols-2 gap-2">
             <Button
               onClick={onConfirm}
               className="bg-green-700 hover:bg-green-800 text-white rounded-none rounded-bl-lg"

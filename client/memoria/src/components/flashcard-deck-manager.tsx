@@ -15,26 +15,24 @@ interface Flashcard {
 interface FlashcardDeckManagerProps {
   initialFlashcards?: Flashcard[]
   deckName?: string
+  originalText?: string
+  storeId?: string
+  entities?: string[]
 }
 
 export default function FlashcardDeckManager({
   initialFlashcards = [],
   deckName = "Untitled Deck",
+  originalText = "",
+  storeId = "",
+  entities = [],
 }: FlashcardDeckManagerProps) {
-  const [flashcards, setFlashcards] = useState<Flashcard[]>(
-    initialFlashcards.length > 0 ? initialFlashcards : []
-  )
-
-  // State for modals
+  const [flashcards, setFlashcards] = useState<Flashcard[]>(initialFlashcards)
   const [editingFlashcard, setEditingFlashcard] = useState<Flashcard | null>(null)
   const [deletingFlashcardId, setDeletingFlashcardId] = useState<string | null>(null)
-  
-  // State for saving
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
-
-  
 
   const handleEditFlashcard = (id: string) => {
     const flashcard = flashcards.find((card) => card.id === id)
@@ -44,18 +42,13 @@ export default function FlashcardDeckManager({
   }
 
   const handleSaveEdit = (id: string, description: string) => {
-    // Only update the description field, vocabulary remains unchanged
     setFlashcards(flashcards.map((card) => (card.id === id ? { ...card, description } : card)))
     setEditingFlashcard(null)
   }
 
-  const handleCancelEdit = () => {
-    setEditingFlashcard(null)
-  }
+  const handleCancelEdit = () => setEditingFlashcard(null)
 
-  const handleDeleteFlashcard = (id: string) => {
-    setDeletingFlashcardId(id)
-  }
+  const handleDeleteFlashcard = (id: string) => setDeletingFlashcardId(id)
 
   const handleConfirmDelete = () => {
     if (deletingFlashcardId) {
@@ -64,66 +57,52 @@ export default function FlashcardDeckManager({
     }
   }
 
-  const handleCancelDelete = () => {
-    setDeletingFlashcardId(null)
-  }
+  const handleCancelDelete = () => setDeletingFlashcardId(null)
 
   const handleSaveDeck = () => {
-    // Reset states
     setSaveError('')
     setSaveSuccess(false)
     setIsSaving(true)
-    
+
     try {
-      const accessToken = localStorage.getItem("accessToken");
+      const accessToken = localStorage.getItem("accessToken")
       if (!accessToken) {
         setSaveError("You need to be logged in to save changes.")
         setIsSaving(false)
-        return;
+        return
       }
-      
-      // Extract the deck ID from the URL query parameters
-      const urlParams = new URLSearchParams(window.location.search);
-      const deckId = urlParams.get('id');
-      
-      if (!deckId) {
-        setSaveError("Deck ID not found.")
-        setIsSaving(false)
-        return;
-      }
-      
-      fetch(`http://127.0.0.1:8000/api/flashcards/${deckId}/`, {
-        method: 'PUT',
+
+      fetch("http://127.0.0.1:8000/api/flashcards/", {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           name: deckName,
-          flashcards: flashcards
+          flashcards: flashcards,
+          entities: entities,
+          original_text: originalText,
+          store_id: storeId
         }),
-        credentials: 'same-origin',
+        credentials: 'same-origin'
       })
       .then(response => {
-        if (!response.ok) {
-          throw new Error("Failed to save changes");
-        }
-        return response.json();
+        if (!response.ok) throw new Error("Failed to save topic")
+        return response.json()
       })
-      .then(() => {
+      .then(data => {
         setSaveSuccess(true)
-        // Auto hide success message after 3 seconds
-        setTimeout(() => setSaveSuccess(false), 3000)
+        window.location.href = `/learn`
       })
       .catch(err => {
-        console.error("Error saving deck:", err);
-        setSaveError("Failed to save changes. Please try again.")
+        console.error("Error saving deck:", err)
+        setSaveError("Failed to save topic. Please try again.")
       })
-      .finally(() => {
-        setIsSaving(false)
-      });
+      .finally(() => setIsSaving(false))
+
     } catch (err) {
-      console.error("Error in save operation:", err);
+      console.error("Error in save operation:", err)
       setSaveError("An error occurred while saving.")
       setIsSaving(false)
     }
@@ -145,7 +124,7 @@ export default function FlashcardDeckManager({
                 Saving...
               </>
             ) : (
-              'Save Changes'
+              'Save Topic'
             )}
           </Button>
         </div>
@@ -160,19 +139,18 @@ export default function FlashcardDeckManager({
         {saveSuccess && (
           <div className="bg-green-50 text-green-700 p-4 rounded-lg flex items-center mb-4">
             <Check className="h-5 w-5 mr-2" />
-            <span>Deck saved successfully!</span>
+            <span>Topic saved successfully!</span>
           </div>
         )}
 
         <div className="space-y-4">
-          
           {flashcards.length === 0 ? (
             <div className="text-center py-10 text-gray-500">
               <p>No flashcards in this deck yet. Click "Add flashcard" to get started.</p>
             </div>
           ) : (
             flashcards.map((card) => (
-              <div key={card.id} className="border-2 border-green-200 rounded-lg p-6 relative">
+              <div key={card.id} className="border-2 border-green-500 rounded-lg p-10 relative">
                 <div className="absolute right-2 top-2 flex gap-2">
                   <button
                     onClick={() => handleEditFlashcard(card.id)}
@@ -190,15 +168,14 @@ export default function FlashcardDeckManager({
                   </button>
                 </div>
 
-                <div className="text-center mb-6">{card.description}</div>
                 <div className="text-center font-bold text-green-700">{card.vocabulary}</div>
+                <div className="text-center">{card.description}</div>
               </div>
             ))
           )}
         </div>
       </div>
 
-      {/* Edit Modal - Only allows editing description */}
       {editingFlashcard && (
         <EditFlashcardModal 
           flashcard={editingFlashcard} 
@@ -207,7 +184,6 @@ export default function FlashcardDeckManager({
         />
       )}
 
-      {/* Delete Confirmation Modal */}
       {deletingFlashcardId && (
         <DeleteFlashcardModal 
           onConfirm={handleConfirmDelete} 

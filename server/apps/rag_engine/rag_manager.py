@@ -9,7 +9,7 @@ import openai
 from .text_processor import TextProcessor
 from .vector_store import VectorStore
 # Remove the FlashcardEvaluator import
-from .gemini__flashcard_evaluator import ImprovedGeminiFlashcardEvaluator
+from .gemini_flashcard_evaluator import ImprovedGeminiFlashcardEvaluator
 
 
 class RAGManager:
