@@ -52,7 +52,7 @@ export default function TopicList() {
 
   // Navigate to topic detail page
   const handleTopicClick = (topicId) => {
-    window.location.href = `/topics/${topicId}`;
+    window.location.href = `/learn?id=${topicId}`;
   };
 
   if (isLoading) {
