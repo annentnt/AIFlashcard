@@ -20,7 +20,7 @@ class KGView(APIView):
         graph = Graph.objects.get(topic=topic)
         graph_manager = KnowledgeGraphManager()
         graph_manager.load_graph(graph)
-        graph_manager.visualize_graph()
+        graph_manager.visualize_graph(topic.pk)
 
         serializer = GraphSerializer(graph)
 

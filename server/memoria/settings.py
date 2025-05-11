@@ -181,13 +181,17 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 USED_GPT_MODEL = "gpt-4o-mini"
 
-# Cấu hình Media cho lưu trữ vector stores
+# Cấu hình Media
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Tạo thư mục vector_stores
 VECTOR_STORES_DIR = os.path.join(MEDIA_ROOT, 'vector_stores')
 os.makedirs(VECTOR_STORES_DIR, exist_ok=True)
+
+# Tạo thư mục đồ thị tri thức
+GRAPHS_DIR = os.path.join(MEDIA_ROOT, 'graphs')
+os.makedirs(GRAPHS_DIR, exist_ok=True)
 
 # Tăng giới hạn upload cho xử lý RAG
 DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20MB
