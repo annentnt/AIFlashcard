@@ -1,96 +1,160 @@
 "use client"
 import React, { useEffect, useState } from 'react';
-import { Trash2, ArrowLeft, X } from "lucide-react"
+import { Trash2, ArrowLeft, MessageSquare } from "lucide-react"
 import DeleteDeckModal from "./delete-deck"
-import AIChatInterface from "./ai-chat"
 import { useRouter } from "next/navigation"
 
-interface Deck {
-  id: string
-  name: string
-  cardCount: number
+interface Topic {
+  id: string;
+  name: string;
+  store_id: string; // 👈 thêm dòng này nếu API trả về field này
+  flashcards: {
+    id: string;
+    vocabulary: string;
+    description: string;
+  }[];
 }
 
-// Sample mindmap data
-const mindmapData = {
-  "1": {
-    id: "1",
-    name: "Fruits",
-    items: [
-      { id: "1", term: "Apple", pronunciation: "/æp.əl/", family: "Rosaceae" },
-      { id: "2", term: "Orange", pronunciation: "/ɒr.ɪndʒ/", family: "Rutaceae" },
-      { id: "3", term: "Pineapple", pronunciation: "/paɪn.æp.əl/", family: "Bromeliaceae" },
-    ],
-  },
-  "2": {
-    id: "2",
-    name: "Animals",
-    items: [
-      { id: "1", term: "Lion", pronunciation: "/ˈlaɪ.ən/", family: "Felidae" },
-      { id: "2", term: "Elephant", pronunciation: "/ˈel.ɪ.fənt/", family: "Elephantidae" },
-      { id: "3", term: "Dolphin", pronunciation: "/ˈdɒl.fɪn/", family: "Delphinidae" },
-    ],
-  },
-}
 
-function cardCountStatus(id_topic: string, status: string) {
-  return fetch(`http://127.0.0.1:8000/api/learn_history/status/${status}`)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      return response.json();
-    })
-    .then((data) => {
-      let filtered = data.filter((item: any) => item.id_topic === id_topic);
-
-      if (status) {
-        filtered = filtered.filter((item: any) => item.status === status);
-      }
-
-      console.log(`Card count for topic ${id_topic} with status "${status}":`, filtered.length);
-      return filtered.length;
-    })
-    .catch((error) => {
-      console.error("Fetch error:", error);
-      return 0;
-    });
+interface LearnedFlashcard {
+  id: string;
+  vocabulary: string;
+  meaning?: string;
+  description?: string;
+  pronunciation?: string;
+  example?: string;
+  status?: string;
+  [key: string]: any;
 }
 
 export default function LearningHistory() {
   const router = useRouter()
-  const [decks, setDecks] = useState<Deck[]>([]);
-  const [cnt_newcards, setNewCardCount] = useState(0);
-  const [cnt_learntcards, setLearntCardCount] = useState(0);
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [accessToken, setAccessToken] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // State to track learned cards for each topic
+  const [topicStats, setTopicStats] = useState<Record<string, { keptInMind: number, learnAgain: number }>>({});
+  
+  const [deletingDeckId, setDeletingDeckId] = useState<string | null>(null)
 
+  // First get access token
   useEffect(() => {
-    async function loadDecks() {
-      const countNew = await cardCountStatus("fruits", "new");
-      const countLearnt= await cardCountStatus("fruits", "learnt");
-      const countAll = countNew + countLearnt;
-      setDecks([{ id: "1", name: "FRUITS", cardCount: countAll }]);
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      setAccessToken(token);
+    } else {
+      setError("No access token found. Please log in.");
+      setIsLoading(false);
     }
-
-    loadDecks();
-
-    cardCountStatus("fruits", "new").then((count) => setNewCardCount(count));
-    cardCountStatus("fruits", "learnt").then((count) => setLearntCardCount(count));
-
   }, []);
 
+  // Then fetch topics and calculate stats
+  useEffect(() => {
+    if (!accessToken) return;
+    
+    const fetchTopics = async () => {
+      setIsLoading(true);
+      try {
+        const res = await fetch("http://localhost:8000/api/flashcards/", {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          },
+          credentials: 'same-origin',
+        });
+        
+        if (!res.ok) throw new Error("Failed to fetch topics");
+        
+        const data = await res.json();
+        setTopics(data);
+        
+        // After we have the topics, calculate stats for each
+        calculateTopicStats(data);
+      } catch (err) {
+        console.error("Error loading topics:", err);
+        setError("Unable to load topics.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchTopics();
+  }, [accessToken]);
 
-  const [deletingDeckId, setDeletingDeckId] = useState<string | null>(null)
-  const [viewingMindmapId, setViewingMindmapId] = useState<string | null>(null)
-  const [showChat, setShowChat] = useState(false)
+  // Function to calculate stats for each topic
+  const calculateTopicStats = (topicsData: Topic[]) => {
+    // Get the flashcards from localStorage
+    const keptInMindString = localStorage.getItem("keptInMindFlashcards");
+    const learnAgainString = localStorage.getItem("learnAgainFlashcards");
+    
+    let keptInMindCards: LearnedFlashcard[] = [];
+    let learnAgainCards: LearnedFlashcard[] = [];
+    
+    try {
+      if (keptInMindString) {
+        keptInMindCards = JSON.parse(keptInMindString);
+      }
+      
+      if (learnAgainString) {
+        learnAgainCards = JSON.parse(learnAgainString);
+      }
+    } catch (e) {
+      console.error("Error parsing localStorage data:", e);
+    }
+    
+    // Initialize stats object
+    const stats: Record<string, { keptInMind: number, learnAgain: number }> = {};
+    
+    // Go through each topic and count cards for each
+    topicsData.forEach(topic => {
+      const topicId = String(topic.id);
+      
+      // Count cards that belong to this topic
+      const keptInMindCount = keptInMindCards.filter(card => {
+        // Try to match the card to this topic's flashcards
+        return topic.flashcards.some(topicCard => String(topicCard.id) === String(card.id));
+      }).length;
+      
+      const learnAgainCount = learnAgainCards.filter(card => {
+        return topic.flashcards.some(topicCard => String(topicCard.id) === String(card.id));
+      }).length;
+      
+      stats[topicId] = {
+        keptInMind: keptInMindCount,
+        learnAgain: learnAgainCount
+      };
+    });
+    
+    setTopicStats(stats);
+  };
 
   const handleDeleteDeck = (id: string) => {
     setDeletingDeckId(id)
   }
 
-  const handleConfirmDelete = () => {
-    if (deletingDeckId) {
-      setDecks(decks.filter((deck) => deck.id !== deletingDeckId))
-      setDeletingDeckId(null)
+  const handleConfirmDelete = async () => {
+    if (deletingDeckId && accessToken) {
+      try {
+        // Send delete request to API
+        const res = await fetch(`http://localhost:8000/api/flashcards/topic/${deletingDeckId}/`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          },
+          credentials: 'same-origin',
+        });
+        
+        if (!res.ok) throw new Error("Failed to delete topic");
+        
+        // Update UI by removing the deleted topic
+        setTopics(topics.filter(topic => String(topic.id) !== deletingDeckId));
+        setDeletingDeckId(null);
+      } catch (err) {
+        console.error("Error deleting topic:", err);
+        setError("Failed to delete topic. Please try again.");
+      }
     }
   }
 
@@ -98,251 +162,152 @@ export default function LearningHistory() {
     setDeletingDeckId(null)
   }
 
-  const navigateToLearn = (deckId: string, mode: string) => {
-    // In a real app, this would use Next.js router to navigate with query parameters
-    // For our simulation, we'll use localStorage to pass the parameters
+  const navigateToLearn = (topicId: string, mode: string) => {
+    // Find the topic name
+    const topic = topics.find(t => String(t.id) === topicId);
+    
+    if (!topic) {
+      console.error("Topic not found:", topicId);
+      return;
+    }
+    
+    // Store learning parameters in localStorage
     const learningParams = {
-      deckId,
+      topicId,
       mode,
-      deckName: decks.find((deck) => deck.id === deckId)?.name || "Deck",
+      topicName: topic.name,
     }
 
     try {
-      localStorage.setItem("learningParams", JSON.stringify(learningParams))
+      localStorage.setItem("learningParams", JSON.stringify(learningParams));
     } catch (error) {
-      console.error("Error saving learning params:", error)
+      console.error("Error saving learning params:", error);
     }
 
-    // Navigate to the learn page
-    router.push("/learn")
+    // Navigate to the flashcard learning page
+    router.push("/flashcard-learning");
   }
 
-  const handleLearnNewWords = (deckId: string) => {
-    navigateToLearn(deckId, "new")
+  const handleLearnNewWords = (topicId: string) => {
+    navigateToLearn(topicId, "new");
   }
 
-  const handleLearnAllWords = (deckId: string) => {
-    navigateToLearn(deckId, "all")
+  const handleRelearnLearntWords = (topicId: string) => {
+    navigateToLearn(topicId, "learnt");
   }
 
-  const handleLearnUnlearntWords = (deckId: string) => {
-    navigateToLearn(deckId, "unlearnt")
-  }
+  // Modified function to navigate to AI Chat - Sửa ở đây
+  // Correct implementation of navigateToAiChat function
+  const navigateToAiChat = (topicId: string) => {
+    try {
+      const topic = topics.find(t => String(t.id) === topicId);
+      
+      if (!topic) {
+        console.error("Topic not found:", topicId);
+        return;
+      }
 
-  const handleRelearnLearntWords = (deckId: string) => {
-    navigateToLearn(deckId, "learnt")
-  }
-
-  const handleViewMindmap = (deckId: string) => {
-    setViewingMindmapId(deckId)
-    setShowChat(false)
-  }
-
-  const handleBackFromMindmap = () => {
-    setViewingMindmapId(null)
-    setShowChat(false)
-  }
-
-  const handleToggleChat = () => {
-    setShowChat(!showChat)
-  }
-
-  const handleCloseChat = () => {
-    setShowChat(false)
-  }
-
-  // If viewing a mindmap, show the mindmap view
-  if (viewingMindmapId) {
-    const mindmapDeck = mindmapData[viewingMindmapId as keyof typeof mindmapData]
-
-    if (!mindmapDeck) {
-      return (
-        <div className="max-w-3xl mx-auto text-center py-8">
-          <p>Deck not found</p>
-          <button
-            onClick={handleBackFromMindmap}
-            className="mt-4 bg-green-200 text-green-800 px-4 py-2 rounded-2xl hover:bg-green-300 transition-colors"
-          >
-            Back to Learning History
-          </button>
-        </div>
-      )
+      // Use the correct store_id here
+      localStorage.setItem("currentAIChatStoreId", topic.store_id);
+      localStorage.setItem("currentAIChatTopicName", topic.name);
+      
+      router.push(`/ai-chat?storeId=${topic.store_id}`);
+    } catch (error) {
+      console.error("Error navigating to AI chat:", error);
+      setError("Failed to open AI chat. Please try again.");
     }
+  }
 
+
+  if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto">
-        {showChat ? (
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden h-[500px] mb-6 relative">
-            <button
-              onClick={handleCloseChat}
-              className="absolute top-3 right-3 p-1 hover:bg-gray-200 rounded-full z-10"
-              aria-label="Close chat"
-            >
-              <X size={20} />
-            </button>
-            <AIChatInterface storeId="8844d825-832b-4574-942d-d1e25b088663" onClose={handleCloseChat} />
-          </div>
-        ) : (
-          <>
-            <div className="flex justify-between items-center mb-6">
-              <button
-                onClick={handleBackFromMindmap}
-                className="bg-green-200 text-green-800 px-4 py-2 rounded-2xl hover:bg-green-300 transition-colors flex items-center gap-2"
-              >
-                <ArrowLeft size={16} />
-                Back
-              </button>
-              <h1 className="text-2xl font-bold">{mindmapDeck.name}:</h1>
-              <div className="w-20"></div> {/* Spacer for alignment */}
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-sm p-4 mb-6">
-              <div className="aspect-video relative">
-                <svg viewBox="0 0 800 500" className="w-full h-full" style={{ fontFamily: "Arial, sans-serif" }}>
-                  {/* Central node */}
-                  <g>
-                    <circle cx="400" cy="200" r="50" fill="#8EEDC7" />
-                    <text x="400" y="205" textAnchor="middle" fontSize="20" fontWeight="bold">
-                      {mindmapDeck.name}
-                    </text>
-                  </g>
-
-                  {/* Family nodes and connections */}
-                  {mindmapDeck.items.map((item, index) => {
-                    // Position families around the central node
-                    const familyPositions = [
-                      { x: 250, y: 170 }, // Left
-                      { x: 550, y: 170 }, // Right
-                      { x: 400, y: 300 }, // Bottom
-                    ]
-
-                    const familyPos = familyPositions[index % familyPositions.length]
-
-                    // Position items near their families
-                    const itemPositions = [
-                      { x: 210, y: 230 }, // Bottom left
-                      { x: 460, y: 290 }, // Bottom right
-                      { x: 340, y: 350 }, // Bottom
-                    ]
-
-                    const itemPos = itemPositions[index % itemPositions.length]
-
-                    const familyColors = ["#FFD8B1", "#FFF9B1", "#B1FFD8"]
-                    const itemColors = ["#FFB1B1", "#FFD8B1", "#FFF9B1"]
-
-                    return (
-                      <g key={item.id}>
-                        {/* Family node */}
-                        <circle
-                          cx={familyPos.x}
-                          cy={familyPos.y}
-                          r="40"
-                          fill={familyColors[index % familyColors.length]}
-                        />
-                        <text x={familyPos.x} y={familyPos.y + 5} textAnchor="middle" fontSize="16">
-                          {item.family}
-                        </text>
-                        <line x1="400" y1="200" x2={familyPos.x} y2={familyPos.y} stroke="#CCCCCC" strokeWidth="2" />
-
-                        {/* Item node */}
-                        <circle cx={itemPos.x} cy={itemPos.y} r="40" fill={itemColors[index % itemColors.length]} />
-                        <text x={itemPos.x} y={itemPos.y - 5} textAnchor="middle" fontSize="16">
-                          {item.term}
-                        </text>
-                        <text x={itemPos.x} y={itemPos.y + 15} textAnchor="middle" fontSize="12" fill="#666666">
-                          {item.pronunciation}
-                        </text>
-                        <line
-                          x1={familyPos.x}
-                          y1={familyPos.y}
-                          x2={itemPos.x}
-                          y2={itemPos.y}
-                          stroke="#CCCCCC"
-                          strokeWidth="2"
-                        />
-                      </g>
-                    )
-                  })}
-                </svg>
-              </div>
-            </div>
-          </>
-        )}
-
-        <div className="flex justify-center">
-          <button
-            onClick={handleToggleChat}
-            className="bg-green-700 hover:bg-green-800 text-white px-8 py-2 rounded-2xl"
-          >
-            {showChat ? "View mindmap" : "Chat with our AI!"}
-          </button>
-        </div>
+      <div className="flex items-center justify-center min-h-[300px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-700"></div>
       </div>
-    )
+    );
   }
 
-  // Otherwise, show the learning history view
+  if (error) {
+    return (
+      <div className="max-w-3xl mx-auto text-center py-8">
+        <p className="text-red-500">{error}</p>
+        <button
+          onClick={() => router.push("/")}
+          className="mt-4 bg-green-700 text-white px-4 py-2 rounded-2xl hover:bg-green-800 transition-colors"
+        >
+          Return to Home
+        </button>
+      </div>
+    );
+  }
+
+  // Show the learning history view
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="space-y-8">
-        {decks.map((deck) => (
-          <div key={deck.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="bg-green-700 text-white p-4 flex justify-between items-center">
-              <h2 className="text-xl font-medium">{deck.name}</h2>
-              <button
-                onClick={() => handleDeleteDeck(deck.id)}
-                className="p-1 hover:bg-red-500 rounded-full transition-colors"
-                aria-label={`Delete ${deck.name} deck`}
-              >
-                <Trash2 className="text-white" size={20} />
-              </button>
-            </div>
-
-            <div className="p-4">
-              <p className="font-medium mb-3">Number of card: {deck.cardCount}</p>
-
-              <div className="flex flex-wrap gap-2 mb-4">
-                <div
-                  // onClick={() => handleLearnNewWords(deck.id)}
-                  className="bg-green-200 text-green-800 px-3 py-1 rounded-2xl hover:bg-green-300 transition-colors"
-                >
-                  Learn new words: {cnt_newcards}
+      <h1 className="text-2xl font-bold mb-6 text-center">Learning History</h1>
+      
+      {topics.length === 0 ? (
+        <div className="text-center py-10">
+          <p className="text-gray-500 mb-4">You haven't studied any topics yet.</p>
+          <button
+            onClick={() => router.push("/topics")}
+            className="bg-green-700 hover:bg-green-800 text-white px-6 py-2 rounded-2xl"
+          >
+            Browse Topics
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {topics.map((topic) => {
+            const topicId = String(topic.id);
+            const stats = topicStats[topicId] || { keptInMind: 0, learnAgain: 0 };
+            
+            return (
+              <div key={topicId} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div className="bg-green-700 text-white p-4 flex justify-between items-center">
+                  <h2 className="text-xl font-medium">{topic.name}</h2>
+                  <button
+                    onClick={() => handleDeleteDeck(topicId)}
+                    className="p-1 hover:bg-red-500 rounded-full transition-colors"
+                    aria-label={`Delete ${topic.name} topic`}
+                  >
+                    <Trash2 className="text-white" size={20} />
+                  </button>
                 </div>
 
-                {/* <button
-                  onClick={() => handleLearnAllWords(deck.id)}
-                  className="bg-green-200 text-green-800 px-3 py-1 rounded-2xl hover:bg-green-300 transition-colors"
-                >
-                  Learn all words
-                </button> */}
+                <div className="p-4">
+                  <p className="font-medium mb-3">Number of cards: {topic.flashcards.length}</p>
 
-                {/* <button
-                  onClick={() => handleLearnUnlearntWords(deck.id)}
-                  className="bg-green-200 text-green-800 px-3 py-1 rounded-2xl hover:bg-green-300 transition-colors"
-                >
-                  Relearn unlearnt words + {cnt_unlearnt_words}
-                </button> */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <button
+                      onClick={() => handleLearnNewWords(topicId)}
+                      className="bg-green-200 text-green-800 px-3 py-1 rounded-2xl hover:bg-green-300 transition-colors"
+                    >
+                      Learn new words: {stats.learnAgain}
+                    </button>
 
-                <div
-                  // onClick={() => handleRelearnLearntWords(deck.id)}
-                  className="bg-green-200 text-green-800 px-3 py-1 rounded-2xl hover:bg-green-300 transition-colors"
-                >
-                  Relearn learnt words: {cnt_learntcards}
+                    <button
+                      onClick={() => handleRelearnLearntWords(topicId)}
+                      className="bg-green-200 text-green-800 px-3 py-1 rounded-2xl hover:bg-green-300 transition-colors"
+                    >
+                      Relearn learnt words: {stats.keptInMind}
+                    </button>
+                    
+                    {/* Button to navigate to AI Chat */}
+                    <button
+                      onClick={() => navigateToAiChat(topicId)}
+                      className="bg-green-600 text-white px-3 py-1 rounded-2xl hover:bg-green-700 transition-colors flex items-center gap-1"
+                    >
+                      <MessageSquare size={16} />
+                      Chat with AI
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <div className="flex justify-center pb-4">
-              <button
-                onClick={() => handleViewMindmap(deck.id)}
-                className="bg-purple-600 text-white px-4 py-2 rounded-2xl hover:bg-purple-700 transition-colors"
-              >
-                View mindmap & chat with AI
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {deletingDeckId && <DeleteDeckModal onConfirm={handleConfirmDelete} onCancel={handleCancelDelete} />}
     </div>
