@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight, Volume2, RefreshCw, Mic, ArrowLeft } from "lucide-react"
+import HoldToRecordButton from "./hold-to-record-button";
 
 // Sample flashcard data for different decks
 const flashcardData = {
@@ -151,8 +152,32 @@ export default function FlashcardLearning() {
 
     // Use the Web Speech API for demonstration purposes
     if ("speechSynthesis" in window) {
-      const utterance = new SpeechSynthesisUtterance(currentCard.term)
-      window.speechSynthesis.speak(utterance)
+      // const utterance = new SpeechSynthesisUtterance(currentCard.term)
+      // window.speechSynthesis.speak(utterance)
+      const text = currentCard.term; // hoặc từ bất kỳ
+
+      fetch('http://127.0.0.1:8000/api/pronunciation/sentence/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Không lấy được audio từ server');
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          const audioUrl = URL.createObjectURL(blob);
+          const audio = new Audio(audioUrl);
+          audio.play();
+        })
+        .catch(error => {
+          console.error('Lỗi khi tải phát âm:', error);
+        });
+
     }
   }
 
@@ -162,24 +187,72 @@ export default function FlashcardLearning() {
 
     // Use the Web Speech API for demonstration purposes
     if ("speechSynthesis" in window) {
-      const utterance = new SpeechSynthesisUtterance(currentCard.example)
-      window.speechSynthesis.speak(utterance)
+      // const utterance = new SpeechSynthesisUtterance(currentCard.example)
+      // window.speechSynthesis.speak(utterance)
+      const text = currentCard.example; // hoặc từ bất kỳ
+
+      fetch('http://127.0.0.1:8000/api/pronunciation/sentence/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Không lấy được audio từ server');
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          const audioUrl = URL.createObjectURL(blob);
+          const audio = new Audio(audioUrl);
+          audio.play();
+        })
+        .catch(error => {
+          console.error('Lỗi khi tải phát âm:', error);
+        });
+
     }
   }
 
-  const handleCheckPronunciation = () => {
-    // In a real app, this would use speech recognition to check pronunciation
-    // For demo purposes, we'll randomly determine if it's correct or incorrect
-    const isCorrect = Math.random() > 0.5
-    setPronunciationResult(isCorrect ? "correct" : "incorrect")
+ const handleCheckPronunciation = async (audioURL: string) => {
+  console.log(audioURL);
 
-    // Set the appropriate state based on where we're checking pronunciation from
+  // const audio = new Audio(audioURL);
+  // audio.play();
+
+  try {
+    const response = await fetch(audioURL);
+    const blob = await response.blob();
+
+    const formData = new FormData();
+    formData.append("file_audio", blob, "audio.webm");
+    formData.append("text", currentCard.term);
+
+    const evaluationResponse = await fetch("http://127.0.0.1:8000/api/pronunciation/evaluate/", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await evaluationResponse.json();
+    console.log("Evaluation result:", data);
+
+    const isCorrect = data.war === 0 || data.content_score > 8;
+    console.log("Evaluate: ", isCorrect);
+
+    setPronunciationResult(isCorrect ? "correct" : "incorrect");
+
     if (cardState === "term") {
-      setCardState("pronunciation-check")
+      setCardState("pronunciation-check");
     } else if (cardState === "intonation-practice") {
-      setCardState("intonation-pronunciation-check")
+      setCardState("intonation-pronunciation-check");
     }
+  } catch (error) {
+    console.error("Error during evaluation:", error);
   }
+};
+
 
   const handleRetry = () => {
     setPronunciationResult(null)
@@ -286,10 +359,11 @@ export default function FlashcardLearning() {
                 </div>
 
                 <button
-                  onClick={handleCheckPronunciation}
+                  // onClick={handleCheckPronunciation}
                   className="text-center text-green-500 hover:underline cursor-pointer block mx-auto"
                 >
-                  (Check Pronunciation)
+                  {/* (Check Pronunciation) */}
+                  <HoldToRecordButton onComplete={handleCheckPronunciation}/>
                 </button>
               </>
             )}
@@ -340,10 +414,11 @@ export default function FlashcardLearning() {
                 </div>
 
                 <button
-                  onClick={handleCheckPronunciation}
+                  // onClick={handleCheckPronunciation}
                   className="text-center text-green-500 hover:underline cursor-pointer"
                 >
-                  (Check Pronunciation)
+                  {/* (Check Pronunciation) */}
+                  <HoldToRecordButton onComplete={handleCheckPronunciation}/>
                 </button>
               </div>
             )}
