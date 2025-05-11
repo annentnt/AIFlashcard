@@ -1,0 +1,293 @@
+{
+  "transformer_evaluation": {
+    "flashcard_count": 20,
+    "entity_count": 20,
+    "evaluation_timestamp": "2025-05-11T11:21:35.678993",
+    "content_coverage": 0.365841418534627,
+    "content_coverage_details": [
+      {
+        "chunk_index": 0,
+        "chunk_length": 889,
+        "entities_matched": 2,
+        "total_entities": 20,
+        "coverage_score": 0.5,
+        "top_matched_entities": [
+          {
+            "entity": "Christmas",
+            "similarity": 0.5824102759361267
+          },
+          {
+            "entity": "Christmas tree",
+            "similarity": 0.5492556691169739
+          },
+          {
+            "entity": "Santa Claus",
+            "similarity": 0.45207884907722473
+          },
+          {
+            "entity": "reindeer",
+            "similarity": 0.3413293659687042
+          },
+          {
+            "entity": "Baby Jesus",
+            "similarity": 0.30803027749061584
+          }
+        ]
+      },
+      {
+        "chunk_index": 1,
+        "chunk_length": 496,
+        "entities_matched": 2,
+        "total_entities": 20,
+        "coverage_score": 0.5,
+        "top_matched_entities": [
+          {
+            "entity": "Santa Claus",
+            "similarity": 0.527601957321167
+          },
+          {
+            "entity": "reindeer",
+            "similarity": 0.5122942924499512
+          },
+          {
+            "entity": "Christmas tree",
+            "similarity": 0.48009416460990906
+          },
+          {
+            "entity": "Christmas",
+            "similarity": 0.4657179117202759
+          },
+          {
+            "entity": "Naughty List",
+            "similarity": 0.4124573767185211
+          }
+        ]
+      },
+      {
+        "chunk_index": 2,
+        "chunk_length": 662,
+        "entities_matched": 1,
+        "total_entities": 20,
+        "coverage_score": 0.25,
+        "top_matched_entities": [
+          {
+            "entity": "Christmas tree",
+            "similarity": 0.533379077911377
+          },
+          {
+            "entity": "reindeer",
+            "similarity": 0.4730077385902405
+          },
+          {
+            "entity": "Christmas",
+            "similarity": 0.46785080432891846
+          },
+          {
+            "entity": "Santa Claus",
+            "similarity": 0.4609416723251343
+          },
+          {
+            "entity": "ornaments",
+            "similarity": 0.38677358627319336
+          }
+        ]
+      },
+      {
+        "chunk_index": 3,
+        "chunk_length": 942,
+        "entities_matched": 1,
+        "total_entities": 20,
+        "coverage_score": 0.25,
+        "top_matched_entities": [
+          {
+            "entity": "Christmas tree",
+            "similarity": 0.5899001955986023
+          },
+          {
+            "entity": "ornaments",
+            "similarity": 0.4870258569717407
+          },
+          {
+            "entity": "Star of Jerusalem",
+            "similarity": 0.40382111072540283
+          },
+          {
+            "entity": "Christmas",
+            "similarity": 0.38052740693092346
+          },
+          {
+            "entity": "Three Apostles",
+            "similarity": 0.3368197977542877
+          }
+        ]
+      }
+    ],
+    "semantic_quality": {
+      "precision": 0.530651843547821,
+      "recall": 0.477586659193039,
+      "f1": 0.5027227991505673,
+      "details": [
+        {
+          "vocabulary": "Christmas",
+          "context_length": 509,
+          "similarity": 0.7950023412704468,
+          "precision": 0.7950023412704468,
+          "recall": 0.7155021071434021
+        },
+        {
+          "vocabulary": "Jesus",
+          "context_length": 560,
+          "similarity": 0.36618176102638245,
+          "precision": 0.36618176102638245,
+          "recall": 0.3295635849237442
+        },
+        {
+          "vocabulary": "Santa Claus",
+          "context_length": 1093,
+          "similarity": 0.5503886342048645,
+          "precision": 0.5503886342048645,
+          "recall": 0.4953497707843781
+        },
+        {
+          "vocabulary": "North Pole",
+          "context_length": 1045,
+          "similarity": 0.4054088294506073,
+          "precision": 0.4054088294506073,
+          "recall": 0.3648679465055466
+        },
+        {
+          "vocabulary": "Good List",
+          "context_length": 1068,
+          "similarity": 0.46667858958244324,
+          "precision": 0.46667858958244324,
+          "recall": 0.4200107306241989
+        },
+        {
+          "vocabulary": "Naughty List",
+          "context_length": 1015,
+          "similarity": 0.48256585001945496,
+          "precision": 0.48256585001945496,
+          "recall": 0.4343092650175095
+        },
+        {
+          "vocabulary": "coal",
+          "context_length": 1013,
+          "similarity": 0.45992225408554077,
+          "precision": 0.45992225408554077,
+          "recall": 0.4139300286769867
+        },
+        {
+          "vocabulary": "reindeer",
+          "context_length": 1026,
+          "similarity": 0.5735349655151367,
+          "precision": 0.5735349655151367,
+          "recall": 0.516181468963623
+        },
+        {
+          "vocabulary": "sled",
+          "context_length": 1059,
+          "similarity": 0.5113587379455566,
+          "precision": 0.5113587379455566,
+          "recall": 0.460222864151001
+        },
+        {
+          "vocabulary": "chimneys",
+          "context_length": 1029,
+          "similarity": 0.6325052380561829,
+          "precision": 0.6325052380561829,
+          "recall": 0.5692547142505646
+        },
+        {
+          "vocabulary": "cookies",
+          "context_length": 1014,
+          "similarity": 0.6609557271003723,
+          "precision": 0.6609557271003723,
+          "recall": 0.5948601543903351
+        },
+        {
+          "vocabulary": "Christmas tree",
+          "context_length": 1062,
+          "similarity": 0.5344329476356506,
+          "precision": 0.5344329476356506,
+          "recall": 0.48098965287208556
+        },
+        {
+          "vocabulary": "ornaments",
+          "context_length": 1055,
+          "similarity": 0.6799625158309937,
+          "precision": 0.6799625158309937,
+          "recall": 0.6119662642478944
+        },
+        {
+          "vocabulary": "lights",
+          "context_length": 1007,
+          "similarity": 0.5706508159637451,
+          "precision": 0.5706508159637451,
+          "recall": 0.5135857343673706
+        },
+        {
+          "vocabulary": "stocking",
+          "context_length": 1013,
+          "similarity": 0.6365921497344971,
+          "precision": 0.6365921497344971,
+          "recall": 0.5729329347610473
+        },
+        {
+          "vocabulary": "mantle",
+          "context_length": 1014,
+          "similarity": 0.45339611172676086,
+          "precision": 0.45339611172676086,
+          "recall": 0.40805650055408477
+        },
+        {
+          "vocabulary": "fireplace",
+          "context_length": 1029,
+          "similarity": 0.4566163122653961,
+          "precision": 0.4566163122653961,
+          "recall": 0.4109546810388565
+        },
+        {
+          "vocabulary": "Star of Jerusalem",
+          "context_length": 665,
+          "similarity": 0.5025594830513,
+          "precision": 0.5025594830513,
+          "recall": 0.4523035347461701
+        },
+        {
+          "vocabulary": "Three Apostles",
+          "context_length": 665,
+          "similarity": 0.36646896600723267,
+          "precision": 0.36646896600723267,
+          "recall": 0.32982206940650943
+        },
+        {
+          "vocabulary": "Baby Jesus",
+          "context_length": 570,
+          "similarity": 0.5078546404838562,
+          "precision": 0.5078546404838562,
+          "recall": 0.45706917643547057
+        }
+      ]
+    },
+    "vocabulary_stats": {
+      "avg_length": 9.0,
+      "min_length": 4,
+      "max_length": 17
+    },
+    "description_stats": {
+      "avg_length": 74.8,
+      "min_length": 59,
+      "max_length": 91
+    }
+  },
+  "gemini_evaluation": {
+    "content_coverage": 0.95,
+    "semantic_quality": {
+      "precision": 0.98,
+      "recall": 0.9275,
+      "f1": 0.9525
+    },
+    "flashcard_count": 20,
+    "entity_count": 20
+  }
+}

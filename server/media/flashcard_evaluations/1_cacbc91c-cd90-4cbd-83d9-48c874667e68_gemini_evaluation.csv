@@ -1,0 +1,5 @@
+Metric,Score
+Content Coverage,0.95
+Semantic Precision,0.9879999999999999
+Semantic Recall,0.905
+Semantic F1,0.9406000000000001

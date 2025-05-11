@@ -203,13 +203,7 @@ export default function FileUploadCard() {
     }
   };
 
-  // New function to open chatbot with the current store_id
-  const handleOpenChatbot = () => {
-    if (!flashcardsData || !flashcardsData.store_id) return;
-    
-    // Navigate to chatbot page with store_id
-    window.location.href = `/chatbot?store_id=${flashcardsData.store_id}&topic=${encodeURIComponent(flashcardsData.name)}`;
-  };
+  
 
   const renderFileUploadArea = () => (
     <div 
@@ -339,13 +333,7 @@ export default function FileUploadCard() {
             Edit flashcard deck
           </button>
           
-          <button
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center"
-            onClick={handleOpenChatbot}
-          >
-            <MessageSquare className="h-5 w-5 mr-2" />
-            Chat with AI
-          </button>
+          
         </div>
       </div>
     );

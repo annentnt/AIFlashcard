@@ -1,0 +1,10 @@
+{
+  "content_coverage": 1.0,
+  "semantic_quality": {
+    "precision": 1.0,
+    "recall": 0.98,
+    "f1": 0.99
+  },
+  "flashcard_count": 8,
+  "entity_count": 8
+}
