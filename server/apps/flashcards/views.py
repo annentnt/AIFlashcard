@@ -12,7 +12,6 @@ from rag_engine.text_processor import TextProcessor
 from knowledge_graph.kg_builder.kg_builder import KnowledgeGraphBuilder
 
 SUPPORTED_FORMATS = ['.pdf', '.docx', '.pptx', '.txt']
-
 class GenerateFlashcardsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -21,6 +20,9 @@ class GenerateFlashcardsView(APIView):
         raw_text = request.data.get('text', '').strip()
         filename = file.name if file else 'input.txt'
         num_flashcards = int(request.POST.get('num_flashcards', 10))
+        
+        # New parameter to specify which evaluator to use
+        evaluator = request.POST.get('evaluator', 'both')  # Options: 'openai', 'gemini', 'both'
 
         if not file and not raw_text:
             return Response({'error': 'You must provide either a file or raw text.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -68,7 +70,8 @@ class GenerateFlashcardsView(APIView):
             'flashcards': flashcards['flashcards'],
             'entities': flashcards['entities'],
             'original_text': text,
-            'store_id': rag_result['store_id']
+            'store_id': rag_result['store_id'],
+            'evaluation_path': f"media/flashcard_evaluations/{request.user.id}_{rag_result['store_id']}_evaluation.png"
         }, status=status.HTTP_200_OK)
 
 class TopicView(APIView):
@@ -197,4 +200,3 @@ class TopicDetailView(APIView):
             return Response({"error": "Topic not found."}, status=status.HTTP_404_NOT_FOUND)
         topic.delete()
         return Response({"message": "Topic deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
-

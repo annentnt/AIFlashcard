@@ -9,20 +9,19 @@ import { Input } from "@/src/components/ui/input"
 interface EditFlashcardModalProps {
   flashcard: {
     id: string
-    question: string
-    answer: string
+    vocabulary: string  // Changed from question to vocabulary
+    description: string  // Changed from answer to description
   }
-  onSave: (id: string, question: string, answer: string) => void
+  onSave: (id: string, description: string) => void  // Updated to only save description
   onCancel: () => void
 }
 
 export default function EditFlashcardModal({ flashcard, onSave, onCancel }: EditFlashcardModalProps) {
-  const [question, setQuestion] = useState(flashcard.question)
-  const [answer, setAnswer] = useState(flashcard.answer)
+  const [description, setDescription] = useState(flashcard.description)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSave(flashcard.id, question, answer)
+    onSave(flashcard.id, description)
   }
 
   return (
@@ -34,28 +33,28 @@ export default function EditFlashcardModal({ flashcard, onSave, onCancel }: Edit
 
         <form onSubmit={handleSubmit} className="p-6">
           <div className="space-y-4">
+            {/* Display the vocabulary field as read-only */}
             <div className="space-y-2">
-              <label htmlFor="question" className="block text-center font-medium">
-                Question
+              <label htmlFor="vocabulary" className="block text-center font-medium">
+                Vocabulary
               </label>
               <Input
-                id="question"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                placeholder="String"
-                className="w-full border-gray-300"
+                id="vocabulary"
+                value={flashcard.vocabulary}
+                readOnly
+                className="w-full border-gray-300 bg-gray-50"
               />
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="answer" className="block text-center font-medium">
-                Answer
+              <label htmlFor="description" className="block text-center font-medium">
+                Description
               </label>
               <Input
-                id="answer"
-                value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
-                placeholder="String"
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter the description"
                 className="w-full border-gray-300"
               />
             </div>

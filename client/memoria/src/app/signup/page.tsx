@@ -36,6 +36,7 @@ export default function Signup() {
         username: formData.username,
         email: formData.email,
         password: formData.password,
+        
       }
       const response = await fetch('http://localhost:8000/api/auth/register/', {
         method: 'POST',
