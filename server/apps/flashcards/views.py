@@ -18,38 +18,51 @@ class GenerateFlashcardsView(APIView):
 
     def post(self, request):
         file = request.FILES.get('file')
-        filename = file.name
+        raw_text = request.data.get('text', '').strip()
+        filename = file.name if file else 'input.txt'
         num_flashcards = int(request.POST.get('num_flashcards', 10))
 
-        if not file or not filename.endswith(tuple(SUPPORTED_FORMATS)):
-            return Response({'error': 'Invalid file format. Supported formats are:' + ' '.join(SUPPORTED_FORMATS)}, status=status.HTTP_400_BAD_REQUEST)
+        if not file and not raw_text:
+            return Response({'error': 'You must provide either a file or raw text.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Giới hạn kích thước file khi sử dụng RAG
-        max_size = settings.DATA_UPLOAD_MAX_MEMORY_SIZE
-        if file.size > max_size:
-            max_size_mb = max_size / (1024 * 1024)
-            return Response({'error': f'File too large. Max size is {max_size_mb}MB.'}, status=status.HTTP_400_BAD_REQUEST)
+        if file and not filename.endswith(tuple(SUPPORTED_FORMATS)):
+            return Response({'error': f'Invalid file format. Supported formats are: {", ".join(SUPPORTED_FORMATS)}'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Xử lý văn bản với RAG
-        rag_manager = RAGManager()
-        
-        # Kiểm tra an toàn trước khi xử lý
+        # Giới hạn kích thước file
+        if file:
+            max_size = settings.DATA_UPLOAD_MAX_MEMORY_SIZE
+            if file.size > max_size:
+                max_size_mb = max_size / (1024 * 1024)
+                return Response({'error': f'File too large. Max size is {max_size_mb}MB.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Extract text
         text_processor = TextProcessor()
-        text = text_processor.extract_text_from_file(file, filename)
-        
+        if file:
+            text = text_processor.extract_text_from_file(file, filename)
+            file.seek(0)  # Reset pointer for further reading
+        else:
+            text = raw_text
+
+        # Content safety check
         if text_processor.check_content_safety(text):
             return Response({'error': 'Content flagged as unsafe.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Reset file pointer cho việc đọc lại
-        file.seek(0)
-        
-        # Xử lý tài liệu với RAG
-        rag_result = rag_manager.process_document(file, filename, request.user.id)
-        flashcards = rag_manager.generate_flashcards(rag_result['store_id'], request.user.id, num_flashcards)
-        
+
+        rag_manager = RAGManager()
+
+        if file:
+            rag_result = rag_manager.process_document(file, filename, request.user.id)
+        else:
+            rag_result = rag_manager.process_raw_text(text, request.user.id)
+
+        flashcards = rag_manager.generate_flashcards(
+            rag_result['store_id'],
+            request.user.id,
+            num_flashcards
+        )
+
         if not flashcards:
             return Response({'error': 'Failed to generate flashcards.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
+
         return Response({
             'name': flashcards['name'],
             'flashcards': flashcards['flashcards'],
