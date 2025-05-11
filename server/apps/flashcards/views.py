@@ -91,21 +91,21 @@ class TopicView(APIView):
         
         if serializer.is_valid():
             try:
-                # First save the topic - this commits it to the database
-                topic = serializer.save(user=user)
-                
-                # After the transaction is committed, proceed with graph building if needed
-                original_text = request.data.get("original_text")
-                flashcards = request.data.get("flashcards", [])
-                entities = request.data.get("entities", [])
-
-                if original_text and entities:
-                    # Explicitly get the topic by ID from the database to ensure it exists
-                    topic_id = topic.id
-                    topic_obj = Topic.objects.get(id=topic_id)
+                with transaction.atomic():
+                    # First save the topic - this commits it to the database
+                    topic = serializer.save(user=user)
                     
-                    # Now build the graph in a separate transaction
-                    with transaction.atomic():
+                    # After the transaction is committed, proceed with graph building if needed
+                    original_text = request.data.get("original_text")
+                    flashcards = request.data.get("flashcards", [])
+                    entities = request.data.get("entities", [])
+
+                    if original_text and entities:
+                        # Explicitly get the topic by ID from the database to ensure it exists
+                        topic_id = topic.id
+                        topic_obj = Topic.objects.get(id=topic_id)
+                        
+                        # Now build the graph in a separate transaction
                         try:
                             self._build_knowledge_graph(
                                 topic_id=topic_id,
@@ -115,7 +115,7 @@ class TopicView(APIView):
                         except Exception as e:
                             print(f"Error in graph creation: {str(e)}")
 
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
             
             except IntegrityError as e:
                 return Response(
