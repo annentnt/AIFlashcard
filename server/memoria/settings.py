@@ -190,5 +190,3 @@ os.makedirs(VECTOR_STORES_DIR, exist_ok=True)
 
 # Tăng giới hạn upload cho xử lý RAG
 DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20MB
-
-

@@ -5,18 +5,38 @@ import type React from "react"
 import { useState } from "react"
 import Navbar from "@/src/components/navbar"
 import CardIllustration from "@/src/components/card-illustration"
+import { useRouter } from "next/navigation"
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // In a real app, you would handle password reset here
-    console.log("Password reset attempt with:", email, password)
-    // Redirect to success page
-    window.location.href = "/password-success"
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage('');
+    setError('');
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/auth/request-reset-password/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage('An email has been sent to your email address. Check your inbox.');
+        setTimeout(() => router.push('/reset-verification'), 3000);
+      } else {
+        setError(data.error || 'An error occurred! Please try again');
+      }
+    } catch (error) {
+      setError('Server connection error!');
+    }
+  };
 
   return (
     <main>
@@ -38,36 +58,6 @@ export default function ForgotPassword() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
-              </div>
-
-              <div>
-                <label htmlFor="password" className="block mb-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  className="input-field"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-
-              <div className="text-xs space-y-1 mt-2">
-                <p>Password requirements:</p>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Minimum of 8 characters.</li>
-                  <li>
-                    Must include the following:
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>At least one uppercase (A-Z)</li>
-                      <li>At least one lowercase (a-z)</li>
-                      <li>At least one number (0-9)</li>
-                      <li>At least one special character (!, @, #, $, etc.)</li>
-                    </ul>
-                  </li>
-                  <li>Avoid using personal information for better security.</li>
-                </ul>
               </div>
 
               <button type="submit" className="w-full btn-primary py-2 mt-4">

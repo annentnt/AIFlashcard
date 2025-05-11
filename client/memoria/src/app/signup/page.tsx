@@ -3,12 +3,12 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation"
 import Navbar from "@/src/components/navbar"
 import CardIllustration from "@/src/components/card-illustration"
 
 export default function Signup() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -32,21 +32,28 @@ export default function Signup() {
     }
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth_user/register/', {
+      const payload = {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+      }
+      const response = await fetch('http://localhost:8000/api/auth/register/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
+
+      console.log(response);
 
       const data = await response.json();
 
       if (response.ok) {
-        navigate('/account-success/');  // Redirect to waiting page
+        router.push('/email-verification/');
       } else {
-        setError(data.error || "Đăng ký thất bại, vui lòng thử lại.");
+        setError(data.error || "Failed to sign up, please try again.");
       }
     } catch (error) {
-      setError("Lỗi kết nối, vui lòng thử lại.");
+      setError("Connection error, please try again.");
     }
   };
 
@@ -58,7 +65,6 @@ export default function Signup() {
           <div className="w-full md:w-1/2 mb-8 md:mb-0">
             <h1 className="text-3xl font-bold text-green-500 mb-2 text-center">New to Memoria?</h1>
             <h2 className="text-2xl font-bold text-green-500 mb-6 text-center">Let&apos;s create account</h2>
-
             <form onSubmit={handleSubmit} className="space-y-4 max-w-sm">
               <div>
                 <label htmlFor="username" className="block mb-1">
@@ -123,7 +129,7 @@ export default function Signup() {
                     required
                 />
               </div>
-
+              {error && <p className="text-sm text-red-500 text-left">{error}</p>}
               <div>
                 <button type="submit" className="w-full btn-primary py-2 mt-4">
                   Sign up
