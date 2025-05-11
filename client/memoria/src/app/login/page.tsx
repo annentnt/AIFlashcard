@@ -56,9 +56,9 @@ export default function Login() {
           localStorage.removeItem("rememberedUsername");
           localStorage.removeItem("rememberedPassword");
         }
-        // login(data.access, data.refresh);
+        login(data.access, data.refresh);
 
-        login(data.accessToken, data.refreshToken);
+        //login(data.accessToken, data.refreshToken);
         router.push('/'); 
       } else {
         setErrorMessage(data.error || "Failed to log in!");
