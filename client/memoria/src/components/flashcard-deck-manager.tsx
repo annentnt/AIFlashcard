@@ -60,18 +60,18 @@ export default function FlashcardDeckManager({
   const handleCancelDelete = () => setDeletingFlashcardId(null)
 
   const handleSaveDeck = () => {
-    setSaveError('')
-    setSaveSuccess(false)
-    setIsSaving(true)
-
+    setSaveError('');
+    setSaveSuccess(false);
+    setIsSaving(true);
+  
     try {
-      const accessToken = localStorage.getItem("accessToken")
+      const accessToken = localStorage.getItem("accessToken");
       if (!accessToken) {
-        setSaveError("You need to be logged in to save changes.")
-        setIsSaving(false)
-        return
+        setSaveError("You need to be logged in to save changes.");
+        setIsSaving(false);
+        return;
       }
-
+  
       fetch("http://127.0.0.1:8000/api/flashcards/", {
         method: 'POST',
         headers: {
@@ -88,36 +88,42 @@ export default function FlashcardDeckManager({
         credentials: 'same-origin'
       })
       .then(response => {
-        if (!response.ok) throw new Error("Failed to save topic")
-        return response.json()
+        if (!response.ok) throw new Error("Failed to save topic");
+        return response.json();
       })
       .then(data => {
-        setSaveSuccess(true)
-
-        // Lưu store_id vào localStorage để dùng sau
+        setSaveSuccess(true);
+  
+        // Store info in localStorage for the /learn page
+        const learningParams = {
+          topicId: data.id,
+          topicName: deckName,
+          mode: "all"  // default mode, or dynamic if you want
+        };
+        localStorage.setItem("learningParams", JSON.stringify(learningParams));
+  
+        // Also store store_id if needed for AI chat, etc.
         if (storeId) {
-          localStorage.setItem("currentAIChatStoreId", storeId)
+          localStorage.setItem("currentAIChatStoreId", storeId);
         }
-
-        // Nếu có topic name, bạn có thể lưu luôn:
-        if (deckName) {
-          localStorage.setItem("currentAIChatTopicName", deckName)
-        }
-
-        window.location.href = `/learn`
+  
+        // Navigate to /learn after saving
+        window.location.href = `/learn`;
       })
       .catch(err => {
-        console.error("Error saving deck:", err)
-        setSaveError("Failed to save topic. Please try again.")
+        console.error("Error saving deck:", err);
+        setSaveError("Failed to save topic. Please try again.");
       })
-      .finally(() => setIsSaving(false))
-
+      .finally(() => {
+        setIsSaving(false);
+      });
+  
     } catch (err) {
-      console.error("Error in save operation:", err)
-      setSaveError("An error occurred while saving.")
-      setIsSaving(false)
+      console.error("Error in save operation:", err);
+      setSaveError("An error occurred while saving.");
+      setIsSaving(false);
     }
-  }
+  };  
 
   return (
     <>
