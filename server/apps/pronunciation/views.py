@@ -1,6 +1,7 @@
 from django.shortcuts import render, HttpResponse
 
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -18,7 +19,7 @@ nltk.download('averaged_perceptron_tagger_eng')
 
 
 class WordPronunciation(APIView):
-
+    permission_classes = [IsAuthenticated]
     def _get_pronunciation(self, word):
 
         url = f'https://api.dictionaryapi.dev/api/v2/entries/en/{word.lower()}'
@@ -62,6 +63,7 @@ class WordPronunciation(APIView):
         return Response(response, status=status.HTTP_200_OK)
     
 class SentencePronunciation(APIView):
+    permission_classes = [IsAuthenticated]
     
     def _text_to_speech(self, text: str) -> bytes:
 
@@ -90,6 +92,7 @@ class SentencePronunciation(APIView):
         return response
 
 class Evaluate(APIView):
+    permission_classes = [IsAuthenticated]
     
     def _normalize(self, text):
         text = text.lower()
