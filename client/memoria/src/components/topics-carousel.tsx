@@ -60,6 +60,19 @@ export default function TopicsCarousel() {
         scrollRef.current?.scrollBy({ left: 300, behavior: "smooth" })
     }
 
+    const handleLearnNow = (topic: Topic) => {
+        // Save params to localStorage
+        const learningParams = {
+          topicId: topic.id,
+          topicName: topic.name,
+          mode: "all"  // or dynamic if needed
+        };
+        localStorage.setItem("learningParams", JSON.stringify(learningParams));
+    
+        // Navigate to /learn
+        router.push("/learn");
+      };
+
     if (error) {
         return <p className="text-center text-red-500">{error}</p>
     }
@@ -87,9 +100,7 @@ export default function TopicsCarousel() {
                 <h3 className="text-xl font-semibold text-green-700 mb-2">{topic.name}</h3>
                 <p className="text-gray-500 text-sm">{topic.flashcards.length} flashcards</p>
                 <button
-                    onClick={() =>
-                        router.push(`/learn?id=${topic.id}`)
-                    }
+                    onClick={() => handleLearnNow(topic)}
                     className="bg-green-600 hover:bg-green-800 text-white text-sm px-4 py-2 rounded-lg mt-auto"
                 >
                     Learn now

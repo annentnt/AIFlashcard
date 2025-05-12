@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight, Volume2, RefreshCw, Mic, Bug } from "lucide-react"
-import HoldToRecordButton from "./hold-to-record-button";
+import MicRecorderButton from "./hold-to-record-button"
 import { useRouter } from "next/navigation" // Import router for redirecting
 
 // Kiểm tra cấu trúc của flashcard từ API
@@ -484,7 +484,7 @@ export default function DebugFlashcardLearning() {
                 </div>
 
                 <div className="text-center">
-                  <HoldToRecordButton onComplete={handleCheckPronunciation} />
+                  <MicRecorderButton onComplete={handleCheckPronunciation} />
                 </div>
               </>
             )}
