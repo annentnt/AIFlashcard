@@ -8,15 +8,13 @@ from rest_framework import status
 from elevenlabs.client import ElevenLabs
 
 import tempfile
-from dotenv import load_dotenv
+from django.conf import settings
 from io import BytesIO
 import re, librosa, os, nltk, jiwer, requests
-# Create your views here.
-load_dotenv()
 
+# Create your views here.
 nltk.download('punkt_tab')
 nltk.download('averaged_perceptron_tagger_eng')
-
 
 class WordPronunciation(APIView):
     permission_classes = [IsAuthenticated]
@@ -68,7 +66,7 @@ class SentencePronunciation(APIView):
     def _text_to_speech(self, text: str) -> bytes:
 
         client = ElevenLabs(
-            api_key=os.getenv("ELEVENLABS_API_KEY")
+            api_key=settings.ELEVENLABS_API_KEY
         )
 
         audio = client.text_to_speech.convert(
@@ -103,7 +101,7 @@ class Evaluate(APIView):
     def _speech_to_text(self, audio_path):
             
         client = ElevenLabs(
-            api_key=os.getenv("ELEVENLABS_API_KEY")
+            api_key=settings.ELEVENLABS_API_KEY
         )
 
         with open(audio_path, 'rb') as f:
