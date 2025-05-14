@@ -28,7 +28,7 @@ interface LearningParams {
 
 export default function DebugFlashcardLearning() {
   const router = useRouter() // Initialize the router
-  const [token, setToken] = useState<string>(null)
+  const [token, setToken] = useState<string>("")
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [cardState, setCardState] = useState<CardState>("term")
   const [topicName, setTopicName] = useState("")
