@@ -1,24 +1,23 @@
 from django.shortcuts import render, HttpResponse
 
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
 from elevenlabs.client import ElevenLabs
 
 import tempfile
-from dotenv import load_dotenv
+from django.conf import settings
 from io import BytesIO
 import re, librosa, os, nltk, jiwer, requests
-# Create your views here.
-load_dotenv()
 
+# Create your views here.
 nltk.download('punkt_tab')
 nltk.download('averaged_perceptron_tagger_eng')
 
-
 class WordPronunciation(APIView):
-
+    permission_classes = [IsAuthenticated]
     def _get_pronunciation(self, word):
 
         url = f'https://api.dictionaryapi.dev/api/v2/entries/en/{word.lower()}'
@@ -62,11 +61,12 @@ class WordPronunciation(APIView):
         return Response(response, status=status.HTTP_200_OK)
     
 class SentencePronunciation(APIView):
+    permission_classes = [IsAuthenticated]
     
     def _text_to_speech(self, text: str) -> bytes:
 
         client = ElevenLabs(
-            api_key=os.getenv("ELEVENLABS_API_KEY")
+            api_key=settings.ELEVENLABS_API_KEY
         )
 
         audio = client.text_to_speech.convert(
@@ -90,6 +90,7 @@ class SentencePronunciation(APIView):
         return response
 
 class Evaluate(APIView):
+    permission_classes = [IsAuthenticated]
     
     def _normalize(self, text):
         text = text.lower()
@@ -100,7 +101,7 @@ class Evaluate(APIView):
     def _speech_to_text(self, audio_path):
             
         client = ElevenLabs(
-            api_key=os.getenv("ELEVENLABS_API_KEY")
+            api_key=settings.ELEVENLABS_API_KEY
         )
 
         with open(audio_path, 'rb') as f:
