@@ -28,6 +28,7 @@ interface LearningParams {
 
 export default function DebugFlashcardLearning() {
   const router = useRouter() // Initialize the router
+  const [token, setToken] = useState<string>("")
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [cardState, setCardState] = useState<CardState>("term")
   const [topicName, setTopicName] = useState("")
@@ -84,6 +85,7 @@ export default function DebugFlashcardLearning() {
           return
         }
         
+        setToken(token)
         // Fetch flashcards for the topic from the API
         fetchFlashcards(params.topicId, params.mode, token)
       } else {
@@ -264,6 +266,10 @@ export default function DebugFlashcardLearning() {
 
       const evaluationResponse = await fetch("http://127.0.0.1:8000/api/pronunciation/evaluate/", {
         method: "POST",
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        credentials: 'same-origin', 
         body: formData
       });
 
@@ -294,6 +300,7 @@ export default function DebugFlashcardLearning() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ text }),
     })
@@ -321,7 +328,8 @@ export default function DebugFlashcardLearning() {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) return;
-      
+      setToken(token)
+
       // Update the flashcard status based on the rating
       let newStatus = currentFlashcard.status;
       

@@ -179,6 +179,7 @@ import os
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 USED_GPT_MODEL = "gpt-4o-mini"
 
 # Cấu hình Media

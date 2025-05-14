@@ -127,7 +127,7 @@ class KnowledgeGraphManager:
         nx.draw_networkx_edge_labels(self.nx_graph, pos, edge_labels=edge_labels, font_color='red')
         plt.title(f"Knowledge Graph: {self.graph_data['name']}")
         plt.axis('off')
-        # plt.tight_layout()
+        plt.tight_layout()
         plt.savefig(os.path.join(settings.GRAPHS_DIR, str(topic_id) + '.png'))
         plt.show()
 
