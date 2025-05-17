@@ -27,7 +27,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-#GEMINI_API_KEY = "your_gemini_api_key_here"  # Replace with your actual Gemini API key
 # Application definition
 
 INSTALLED_APPS = [
@@ -167,11 +166,11 @@ CORS_ALLOWED_ORIGINS = [
 MIDDLEWARE.insert(0, "corsheaders.middleware.CorsMiddleware")
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"  # Use your email provider's SMTP server
+EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "giaphucnguyen200441@gmail.com"
-EMAIL_HOST_PASSWORD = "bwsv spft ghjl omgt"
+EMAIL_HOST_USER = "your_email@gmail.com"
+EMAIL_HOST_PASSWORD = "your_password"
 DEFAULT_FROM_EMAIL = "Memoria"
 
 from dotenv import load_dotenv
@@ -180,19 +179,19 @@ import os
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 USED_GPT_MODEL = "gpt-4o-mini"
 
-# Cấu hình Media
+# Media file settings
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Tạo thư mục vector_stores
+# Create "vector_stores" folder
 VECTOR_STORES_DIR = os.path.join(MEDIA_ROOT, 'vector_stores')
 os.makedirs(VECTOR_STORES_DIR, exist_ok=True)
 
-# Tạo thư mục đồ thị tri thức
+# Create "graphs" folder
 GRAPHS_DIR = os.path.join(MEDIA_ROOT, 'graphs')
 os.makedirs(GRAPHS_DIR, exist_ok=True)
 
-# Tăng giới hạn upload cho xử lý RAG
 DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20MB
