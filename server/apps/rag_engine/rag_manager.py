@@ -89,98 +89,180 @@ class RAGManager:
         return success
     
     
+    # def generate_flashcards(self, store_id, user_id, num_flashcards):
+    #     """Generate flashcards from document using RAG"""
+    #     import json
+
+    #     # Load the vector store
+    #     if not self.load_vector_store(store_id, user_id):
+    #         return None
+
+    #     # Combine all text from the vector store
+    #     all_text = "\n\n".join(self.vector_store.texts)
+    #     prompt = f"""
+    #         You are a language assistant that helps learners understand new vocabulary from documents.
+
+    #         First, extract **all named entities and key phrases** from the document using Named Entity Recognition (NER) and keyphrase extraction techniques. Return them as a flat list of strings, not duplicates.
+
+    #         Then, **select {num_flashcards} of the most important or educational terms** and write short, relevant definitions based on their context in the document.
+
+    #         Return the output strictly as a JSON object with the following format:
+
+    #         {{
+    #             "name": "Topic name",
+    #             "entities": ["Entity1", "Entity2", ...],
+    #             "flashcards": [
+    #                 {{
+    #                     "vocabulary": "Entity1",
+    #                     "description": "Its meaning in context."
+    #                 }},
+    #                 ...
+    #             ]
+    #         }}
+
+    #         Only return a valid JSON object. Do not add any explanation.
+    #         """
+
+    #     try:
+    #         response = self.openai_client.responses.create(
+    #             model=settings.USED_GPT_MODEL,
+    #             input=[
+    #                 {"role": "system", "content": prompt},
+    #                 {"role": "user", "content": all_text}
+    #             ],
+    #             temperature=0.3,
+    #             text={
+    #                 "format": {
+    #                     "type": "json_schema",
+    #                     "name": "flashcard_list",
+    #                     "schema": {
+    #                         "type": "object",
+    #                         "properties": {
+    #                             "name" : {"type": "string"},
+    #                             "entities": {
+    #                                 "type": "array",
+    #                                 "items": {"type": "string"}
+    #                             },
+    #                             "flashcards": {
+    #                                 "type": "array",
+    #                                 "items": {
+    #                                     "type": "object",
+    #                                     "properties": {
+    #                                         "vocabulary": {"type": "string"},
+    #                                         "description": {"type": "string"}
+    #                                     },
+    #                                     "required": ["vocabulary", "description"],
+    #                                     "additionalProperties": False
+    #                                 }
+    #                             }
+    #                         },
+    #                         "required": ["name", "entities", "flashcards"],
+    #                         "additionalProperties": False
+    #                     },
+    #                     "strict": True
+    #                 }
+    #             }
+    #         )
+
+    #         result = json.loads(response.output_text)
+
+    #         # Check structure is as expected
+    #         if "name" in result and "flashcards" in result and "entities" in result:
+    #             # Evaluate the flashcards with only Gemini
+    #             self.evaluate_and_save_flashcards(result, all_text, user_id, store_id)
+    #             return result
+    #         else:
+    #             raise ValueError("Response JSON missing required keys")
+
+    #     except Exception as e:
+    #         print(f"[ERROR] generate_flashcards failed: {e}")
+    #         return {
+    #             "name": '',
+    #             "flashcards": [],
+    #             "entities": []
+    #         }
     def generate_flashcards(self, store_id, user_id, num_flashcards):
-        """Generate flashcards from document using RAG"""
-        import json
+            """Generate flashcards from document using chunked RAG strategy"""
+            import json
 
-        # Load the vector store
-        if not self.load_vector_store(store_id, user_id):
-            return None
-
-        # Combine all text from the vector store
-        all_text = "\n\n".join(self.vector_store.texts)
-        prompt = f"""
-            You are a language assistant that helps learners understand new vocabulary from documents.
-
-            First, extract **all named entities and key phrases** from the document using Named Entity Recognition (NER) and keyphrase extraction techniques. Return them as a flat list of strings, not duplicates.
-
-            Then, **select {num_flashcards} of the most important or educational terms** and write short, relevant definitions based on their context in the document.
-
-            Return the output strictly as a JSON object with the following format:
-
-            {{
-                "name": "Topic name",
-                "entities": ["Entity1", "Entity2", ...],
-                "flashcards": [
-                    {{
-                        "vocabulary": "Entity1",
-                        "description": "Its meaning in context."
-                    }},
-                    ...
-                ]
-            }}
-
-            Only return a valid JSON object. Do not add any explanation.
-            """
-
-        try:
-            response = self.openai_client.responses.create(
-                model=settings.USED_GPT_MODEL,
-                input=[
-                    {"role": "system", "content": prompt},
-                    {"role": "user", "content": all_text}
-                ],
-                temperature=0.3,
-                text={
-                    "format": {
-                        "type": "json_schema",
-                        "name": "flashcard_list",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "name" : {"type": "string"},
-                                "entities": {
-                                    "type": "array",
-                                    "items": {"type": "string"}
-                                },
-                                "flashcards": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "vocabulary": {"type": "string"},
-                                            "description": {"type": "string"}
-                                        },
-                                        "required": ["vocabulary", "description"],
-                                        "additionalProperties": False
-                                    }
-                                }
-                            },
-                            "required": ["name", "entities", "flashcards"],
-                            "additionalProperties": False
-                        },
-                        "strict": True
-                    }
+            if not self.load_vector_store(store_id, user_id):
+                return {
+                    "name": '',
+                    "flashcards": [],
+                    "entities": []
                 }
-            )
 
-            result = json.loads(response.output_text)
+            all_chunks = self.vector_store.texts
+            seen_vocab = set()
+            all_flashcards = []
+            all_entities = set()
+            # Xử lý từng nhóm 1-2 chunks để tránh token quá lớn
+            for i in range(0, len(all_chunks), 2):
+                
+                chunk_group = all_chunks[i:i+2]
 
-            # Check structure is as expected
-            if "name" in result and "flashcards" in result and "entities" in result:
-                # Evaluate the flashcards with only Gemini
-                self.evaluate_and_save_flashcards(result, all_text, user_id, store_id)
-                return result
-            else:
-                raise ValueError("Response JSON missing required keys")
 
-        except Exception as e:
-            print(f"[ERROR] generate_flashcards failed: {e}")
-            return {
-                "name": '',
-                "flashcards": [],
-                "entities": []
+                chunk_text = "\n\n".join(chunk_group)
+
+                prompt = f"""
+                You are a language assistant that helps learners understand new vocabulary from documents.
+
+                First, extract all named entities and key phrases from the text using NER and keyphrase extraction. Return them as a flat list of strings, no duplicates.
+
+                Then, select 2–3 of the most important or educational terms and write short, relevant definitions based on their context.
+
+                Return only a valid JSON in this format:
+                {{
+                    "name": "Chunk flashcard set",
+                    "entities": ["Entity1", "Entity2", ...],
+                    "flashcards": [
+                        {{
+                            "vocabulary": "Entity1",
+                            "description": "Its meaning in context."
+                        }}
+                    ]
+                }}
+                """
+
+                try:
+                    response = self.openai_client.chat.completions.create(
+                        model=settings.USED_GPT_MODEL,
+                        messages=[
+                            {"role": "system", "content": prompt},
+                            {"role": "user", "content": chunk_text}
+                        ],
+                        temperature=0.3,
+                    )
+
+                    result = json.loads(response.choices[0].message.content)
+
+                    # Gộp vào tập hợp
+                    for entity in result.get("entities", []):
+                        all_entities.add(entity)
+
+                    for card in result.get("flashcards", []):
+                        if card["vocabulary"] not in seen_vocab:
+                            all_flashcards.append(card)
+                            seen_vocab.add(card["vocabulary"])
+
+                    if len(all_flashcards) >= num_flashcards:
+                        break
+
+                except Exception as e:
+                    print(f"[Chunk {i}] Error generating flashcards: {e}")
+                    continue
+
+            final_result = {
+                "name": "Document Flashcards",
+                "entities": list(all_entities),
+                "flashcards": all_flashcards[:num_flashcards]
             }
+
+            # Gọi hàm đánh giá nếu bạn có
+            self.evaluate_and_save_flashcards(final_result, "\n\n".join(all_chunks), user_id, store_id)
+
+            return final_result
+
     
     def evaluate_and_save_flashcards(self, flashcards_data, original_text, user_id, store_id):
         """Evaluate generated flashcards using only Gemini evaluator"""
