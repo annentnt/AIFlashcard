@@ -27,9 +27,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-#GEMINI_API_KEY = "your_gemini_api_key_here"  # Replace with your actual Gemini API key
+GEMINI_API_KEY = "AIzaSyAu9sat9gAvDtfAayM-CggEh7BVz-4xLMQ"
 # Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",

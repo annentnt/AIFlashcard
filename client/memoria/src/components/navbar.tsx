@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from 'next/navigation';
 import { useAuth } from "../context/AuthContext";
-
+import Image from "next/image"
 export default function Navbar() {
   const { isAuthenticated, logout } = useAuth();
   const router = useRouter();
@@ -27,8 +27,16 @@ export default function Navbar() {
 
   return (
     <nav className="navbar flex items-center justify-between">
-      <Link href="/" className="text-2xl font-serif italic">
-        Memoria
+      <Link href="/" className="flex items-center gap-2">
+        <div className="w-8 h-8 relative">
+          <Image
+            src="/icon.png"
+            alt="Memoria logo"
+            fill
+            className="object-contain"
+          />
+        </div>
+        <span className="text-2xl font-serif italic">Memoria</span>
       </Link>
 
       <div className="hidden md:flex items-center space-x-6">

@@ -18,22 +18,39 @@ export default function Home() {
         <section className="bg-green-50 py-16">
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row items-center justify-between">
-              <div className="md:w-1/2 mb-10 md:mb-0">
-                <h2 className="text-green-800 text-xl font-medium mb-2">Welcome to</h2>
-                <h1 className="text-5xl font-bold text-green-900 italic mb-4">Memoria</h1>
-                <p className="text-green-800 text-xl mb-6">What do you want to learn today?</p>
+              <div className="md:w-3/5 mb-10 md:mb-0 md:pl-24">
+                {/* Logo and Welcome Text Container */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 relative">
+                    <Image
+                      src="/icon.png"
+                      alt="Memoria logo"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                  <h2 className="text-green-800 text-xl font-medium">Welcome to</h2>
+                </div>
+                
+                {/* Styled Memoria Heading */}
+                <h1 className="text-5xl font-bold text-green-900 mb-4 font-serif">Memoria</h1>
+                
+                {/* Question Text */}
+                <p className="text-green-800 text-xl mb-8">What do you want to learn today?</p>
+                
+                {/* Action Button */}
                 {isAuthenticated ? (
-                  <Link href={'/topics'} className="btn-primary px-8 py-3">
-                  Learn with your flashcards
-                </Link>
+                  <Link href={'/topics'} className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full transition-colors">
+                    Learn with your flashcards
+                  </Link>
                 ) : (
-                  <Link href="/login" className="btn-primary px-8 py-3">
+                  <Link href="/login" className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full transition-colors">
                     Log in
                   </Link>
                 )}
               </div>
-              <div className="w-full md:w-1/2 flex justify-center">
-            <img src="/flashcard_illustration.png" alt="Minh họa" className="max-w-full h-auto" />
+              <div className="w-full md:w-2/5 flex justify-center">
+                <img src="/flashcard_illustration.png" alt="Flashcards illustration" className="max-w-full h-auto" />
               </div>
             </div>
           </div>
