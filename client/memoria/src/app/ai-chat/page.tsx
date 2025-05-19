@@ -4,6 +4,8 @@ import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Send, AlertCircle, Loader } from "lucide-react"
 import { useSearchParams } from "next/navigation"
+import Navbar from "@/src/components/navbar"
+import Footer from "@/src/components/footer"
 
 interface Message {
   id: string
@@ -13,39 +15,45 @@ interface Message {
 
 export default function AIChatPage() {
   const searchParams = useSearchParams();
-    const [storeId, setStoreId] = useState("");
+  const [storeId, setStoreId] = useState("");
 
-    // Ưu tiên lấy từ URL, fallback sang localStorage
-    useEffect(() => {
+  // Ưu tiên lấy từ URL, fallback sang localStorage
+  useEffect(() => {
     const idFromUrl = searchParams?.get('storeId');
     if (idFromUrl) {
-        setStoreId(idFromUrl);
+      setStoreId(idFromUrl);
     } else {
-        const stored = localStorage.getItem("currentAIChatStoreId");
-        if (stored) {
+      const stored = localStorage.getItem("currentAIChatStoreId");
+      if (stored) {
         console.log("Using storeId from localStorage:", stored);
         setStoreId(stored); // ✅ Gán lại vào state
-        }
+      }
     }
-    }, [searchParams]);
+  }, [searchParams]);
 
-
-  // Nếu có storeId, render component AIChatInterface
   return (
-    <div className="max-w-3xl mx-auto h-[80vh]">
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full">
-        {storeId ? (
-          <AIChatInterface storeId={storeId} />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center p-6">
-              <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-              <h2 className="text-xl font-bold mb-2">No Topic Selected</h2>
-              <p className="text-gray-600">Please select a topic from the Learning History page to start chatting.</p>
-            </div>
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      
+      <main className="flex-grow flex items-center justify-center py-8 px-4">
+        <div className="max-w-3xl w-full mx-auto h-[70vh]">
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full">
+            {storeId ? (
+              <AIChatInterface storeId={storeId} />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center p-6">
+                  <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+                  <h2 className="text-xl font-bold mb-2">No Topic Selected</h2>
+                  <p className="text-gray-600">Please select a topic from the Learning History page to start chatting.</p>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      </main>
+      
+      <Footer />
     </div>
   );
 }

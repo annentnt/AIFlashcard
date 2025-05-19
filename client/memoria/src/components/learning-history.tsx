@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Trash2, ArrowLeft, MessageSquare } from "lucide-react"
 import DeleteDeckModal from "./delete-deck"
 import { useRouter } from "next/navigation"
+import { log } from 'console';
 
 interface Topic {
   id: string;
@@ -135,10 +136,11 @@ export default function LearningHistory() {
   }
 
   const handleConfirmDelete = async () => {
-    if (deletingDeckId && accessToken) {
+    
+    if (deletingDeckId  && accessToken) {
       try {
         // Send delete request to API
-        const res = await fetch(`http://localhost:8000/api/flashcards/topic/${deletingDeckId}/`, {
+        const res = await fetch(`http://localhost:8000/api/flashcards/${deletingDeckId}/`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${accessToken}`
