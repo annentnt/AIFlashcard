@@ -16,6 +16,7 @@ Memoria is an AI-powered platform that automatically generates and manages flash
 6. [Usage Workflow](#usage-workflow)
 7. [Documentation](#documentation)
 8. [License](#license)
+9. [Deployment](#deployment)
 
 ## Overview
 
@@ -137,3 +138,14 @@ python manage.py runserver
 Distributed under the terms of the [LICENSE](./LICENSE) file in this repository.
 
 > For questions, feature requests, or contributions, please open an issue or pull request!
+
+## Deployment
+
+- Front-end (Vercel):
+  - In `client/memoria`, create `.env.local` with `NEXT_PUBLIC_API_BASE` pointing to your Render backend, for example: `https://your-backend.onrender.com`.
+  - Push to GitHub and import the project into Vercel.
+
+- Back-end (Render):
+  - Use `server` as the root. Set environment variables in Render using `server/.env.example` as a guide.
+  - Provide `DATABASE_URL` (Render Postgres), `SECRET_KEY`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, and `CSRF_TRUSTED_ORIGINS`.
+  - Set the start command to `gunicorn memoria.wsgi` or your preferred ASGI/WSGI server.
