@@ -5,6 +5,8 @@ import re
 from typing import List
 import openai
 from memoria.settings import OPENAI_API_KEY
+import os
+import time
 
 class TextProcessor:
     def __init__(self, chunk_size=500, chunk_overlap=100):
@@ -96,13 +98,59 @@ class TextProcessor:
         return overlapping_chunks
     
     def check_content_safety(self, text: str) -> bool:
+        """Moderate text in chunks to reduce per-request rate/size.
+
+        Behavior controlled via env vars (optional):
+          - MODERATION_ENABLED: 'true' | 'false' (default: true)
+          - MODERATION_CHUNK_CHARS: max characters per moderation call (default: 4000)
+          - MODERATION_MAX_CHUNKS: max chunks to check (default: 10)
+          - MODERATION_THROTTLE_SECONDS: sleep between chunks (default: 0.1)
+          - MODERATION_MAX_RETRIES: retries upon rate limit (default: 3)
+        Returns True if any chunk is flagged; otherwise False.
+        """
+        enabled = os.getenv("MODERATION_ENABLED", "true").lower() == "true"
+        if not enabled:
+            return False
+
         moderation_client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
-        moderation_response = moderation_client.moderations.create(
-            model="omni-moderation-latest",
-            input=text
-        )
+        max_chars = int(os.getenv("MODERATION_CHUNK_CHARS", "4000"))
+        max_chunks = int(os.getenv("MODERATION_MAX_CHUNKS", "10"))
+        throttle = float(os.getenv("MODERATION_THROTTLE_SECONDS", "0.1"))
+        max_retries = int(os.getenv("MODERATION_MAX_RETRIES", "3"))
 
-        result = moderation_response.results[0].flagged
+        if max_chars <= 0:
+            max_chars = 4000
+        if max_chunks <= 0:
+            max_chunks = 10
 
-        return result
+        # Simple, robust character-based chunking for moderation
+        chunks = [text[i:i + max_chars] for i in range(0, len(text), max_chars)]
+        if len(chunks) > max_chunks:
+            chunks = chunks[:max_chunks]
+
+        for idx, chunk in enumerate(chunks):
+            retries = 0
+            while True:
+                try:
+                    moderation_response = moderation_client.moderations.create(
+                        model="omni-moderation-latest",
+                        input=chunk
+                    )
+                    flagged = moderation_response.results[0].flagged
+                    print(flagged)
+                    if flagged:
+                        return True
+                    break
+                except openai.RateLimitError:
+                    if retries >= max_retries:
+                        # Surface the error after exhausting retries
+                        raise
+                    # Exponential backoff
+                    time.sleep(0.5 * (2 ** retries))
+                    retries += 1
+
+            if throttle > 0:
+                time.sleep(throttle)
+
+        return False
