@@ -1,5 +1,3 @@
-
-
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -7,7 +5,7 @@ from rest_framework import status
 
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
-from rag_engine.rag_manager import RAGManager
+from apps.rag_engine.rag_manager import RAGManager
 
 class ConversationView(APIView):
     permission_classes = [IsAuthenticated]

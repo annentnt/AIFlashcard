@@ -7,9 +7,9 @@ from django.conf import settings
 
 from .models import Topic
 from .serializers import TopicSerializer
-from rag_engine.rag_manager import RAGManager
-from rag_engine.text_processor import TextProcessor
-from knowledge_graph.kg_builder.kg_builder import KnowledgeGraphBuilder
+from apps.rag_engine.rag_manager import RAGManager
+from apps.rag_engine.text_processor import TextProcessor
+from apps.knowledge_graph.kg_builder.kg_builder import KnowledgeGraphBuilder
 
 SUPPORTED_FORMATS = ['.pdf', '.docx', '.pptx', '.txt']
 class GenerateFlashcardsView(APIView):
@@ -46,8 +46,9 @@ class GenerateFlashcardsView(APIView):
             text = raw_text
 
         # Content safety check
-        if text_processor.check_content_safety(text):
-            return Response({'error': 'Content flagged as unsafe.'}, status=status.HTTP_400_BAD_REQUEST)
+        if settings.CHECK_CONTENT_SAFETY:
+            if text_processor.check_content_safety(text):
+                return Response({'error': 'Content flagged as unsafe.'}, status=status.HTTP_400_BAD_REQUEST)
 
         rag_manager = RAGManager()
 

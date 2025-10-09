@@ -1,6 +1,6 @@
 # rag/embedding.py
 import openai
-from memoria.settings import OPENAI_API_KEY
+from ...memoria.settings import OPENAI_API_KEY
 
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 

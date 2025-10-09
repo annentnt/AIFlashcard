@@ -138,7 +138,6 @@ class TextProcessor:
                         input=chunk
                     )
                     flagged = moderation_response.results[0].flagged
-                    print(flagged)
                     if flagged:
                         return True
                     break
