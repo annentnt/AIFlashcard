@@ -4,13 +4,14 @@ import Link from "next/link"
 import { useRouter } from 'next/navigation';
 import { useAuth } from "../context/AuthContext";
 import Image from "next/image"
+import { apiUrl } from "@/lib/api"
 export default function Navbar() {
   const { isAuthenticated, logout } = useAuth();
   const router = useRouter();
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:8000/api/auth/logout/", {
+      await fetch(apiUrl('/api/auth/logout/'), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation"
 import Navbar from "@/src/components/navbar"
+import { apiUrl } from "@/lib/api"
 import Footer from "@/src/components/footer"
 import FlashcardDeckManager from "@/src/components/flashcard-deck-manager"
 import { Loader, AlertCircle } from "lucide-react"
@@ -28,7 +29,7 @@ export default function DeckManagerPage() {
     
     if (deckId) {
       // Fetch the flashcards for this deck
-      fetch(`http://127.0.0.1:8000/api/flashcards/${deckId}/`, {
+      fetch(apiUrl(`/api/flashcards/${deckId}/`), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${accessToken}`

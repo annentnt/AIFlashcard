@@ -1,5 +1,6 @@
 "use client"
 import React, { useEffect, useState } from 'react';
+import { apiUrl } from "@/lib/api"
 import { Trash2, ArrowLeft, MessageSquare } from "lucide-react"
 import DeleteDeckModal from "./delete-deck"
 import { useRouter } from "next/navigation"
@@ -58,7 +59,7 @@ export default function LearningHistory() {
     const fetchTopics = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch("http://localhost:8000/api/flashcards/", {
+        const res = await fetch(apiUrl('/api/flashcards/'), {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${accessToken}`
@@ -140,7 +141,7 @@ export default function LearningHistory() {
     if (deletingDeckId  && accessToken) {
       try {
         // Send delete request to API
-        const res = await fetch(`http://localhost:8000/api/flashcards/${deletingDeckId}/`, {
+        const res = await fetch(apiUrl(`/api/flashcards/${deletingDeckId}/`), {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${accessToken}`

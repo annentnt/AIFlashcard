@@ -5,6 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Navbar from "@/src/components/navbar"
+import { apiUrl } from "@/lib/api"
 import CardIllustration from "@/src/components/card-illustration"
 
 export default function Signup() {
@@ -38,7 +39,7 @@ export default function Signup() {
         password: formData.password,
         
       }
-      const response = await fetch('http://localhost:8000/api/auth/register/', {
+      const response = await fetch(apiUrl('/api/auth/register/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

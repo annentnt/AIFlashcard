@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/src/components/ui/button"
 import { Pen, Trash2, Plus, Check, AlertCircle, Loader } from "lucide-react"
+import { apiUrl } from "@/lib/api"
 import EditFlashcardModal from "./edit-flashcard"
 import DeleteFlashcardModal from "./delete-flashcard"
 
@@ -72,7 +73,7 @@ export default function FlashcardDeckManager({
         return;
       }
   
-      fetch("http://127.0.0.1:8000/api/flashcards/", {
+      fetch(apiUrl('/api/flashcards/'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

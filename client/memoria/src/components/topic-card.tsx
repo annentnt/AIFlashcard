@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Book, Loader, AlertCircle } from 'lucide-react';
+import { apiUrl } from "@/lib/api"
 
 export default function TopicList() {
   const [topics, setTopics] = useState([]);
@@ -23,7 +24,7 @@ export default function TopicList() {
 
   const fetchTopics = async (token) => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/flashcards/', {
+      const response = await fetch(apiUrl('/api/flashcards/'), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`

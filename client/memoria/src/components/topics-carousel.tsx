@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { apiUrl } from "@/lib/api"
 
 interface Topic {
     id: number
@@ -34,7 +35,7 @@ export default function TopicsCarousel() {
         
         const fetchTopics = async () => {
             try {
-            const res = await fetch("http://localhost:8000/api/flashcards/", {
+            const res = await fetch(apiUrl('/api/flashcards/'), {
                 method: 'GET',
                 headers: {
                 'Authorization': `Bearer ${accessToken}`

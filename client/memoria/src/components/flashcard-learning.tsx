@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight, Volume2, RefreshCw, Mic, Bug } from "lucide-react"
 import MicRecorderButton from "./hold-to-record-button"
 import { useRouter } from "next/navigation" // Import router for redirecting
+import { apiUrl } from "@/lib/api"
 
 // Kiểm tra cấu trúc của flashcard từ API
 type Flashcard = {
@@ -104,7 +105,7 @@ export default function DebugFlashcardLearning() {
       // Fetch topic details including all flashcards
       console.log(`Fetching flashcards for topic ID: ${topicId}`);
       // Cập nhật URL API thành /api/learn/:id/ như bạn đề cập
-      const response = await fetch(`http://127.0.0.1:8000/api/learn/${topicId}/`, {
+      const response = await fetch(apiUrl(`/api/learn/${topicId}/`), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -264,7 +265,7 @@ export default function DebugFlashcardLearning() {
       formData.append("file_audio", blob, "audio.webm");
       formData.append("text", flashcards[currentCardIndex].vocabulary);
 
-      const evaluationResponse = await fetch("http://127.0.0.1:8000/api/pronunciation/evaluate/", {
+      const evaluationResponse = await fetch(apiUrl('/api/pronunciation/evaluate/'), {
         method: "POST",
         headers: {
           'Authorization': `Bearer ${token}`
@@ -296,7 +297,7 @@ export default function DebugFlashcardLearning() {
     
     const text = flashcards[currentCardIndex].vocabulary;
 
-    fetch('http://127.0.0.1:8000/api/pronunciation/sentence/', {
+    fetch(apiUrl('/api/pronunciation/sentence/'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -360,7 +361,7 @@ export default function DebugFlashcardLearning() {
       }
       
       // Send the status update to the API
-      await fetch(`http://127.0.0.1:8000/api/flashcards/card/${currentFlashcard.id}/`, {
+      await fetch(apiUrl(`/api/flashcards/card/${currentFlashcard.id}/`), {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

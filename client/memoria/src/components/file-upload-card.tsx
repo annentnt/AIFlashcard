@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Upload, FileText, Check, AlertCircle, Loader, MessageSquare } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { apiUrl } from "@/lib/api"
 import FlashcardDeckManager from './flashcard-deck-manager';
 
 interface FlashcardsData {
@@ -130,7 +131,7 @@ export default function FileUploadCard() {
       // Add the deck name from settings
       formData.append('deck_name', deckName);
       
-      const response = await fetch('http://127.0.0.1:8000/api/flashcards/generate/', {
+      const response = await fetch(apiUrl('/api/flashcards/generate/'), {
         method: 'POST',
         body: formData,
         headers: {

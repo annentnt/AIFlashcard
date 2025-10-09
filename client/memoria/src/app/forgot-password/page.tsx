@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Navbar from "@/src/components/navbar"
+import { apiUrl } from "@/lib/api"
 import CardIllustration from "@/src/components/card-illustration"
 import { useRouter } from "next/navigation"
 
@@ -19,7 +20,7 @@ export default function ForgotPassword() {
     setError('');
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/request-reset-password/', {
+      const response = await fetch(apiUrl('/api/auth/request-reset-password/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

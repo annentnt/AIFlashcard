@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Navbar from "@/src/components/navbar"
+import { apiUrl } from "@/lib/api"
 
 export default function ResetPassword() {
   const { uidb64, token } = useParams() as { uidb64: string; token: string };
@@ -24,7 +25,7 @@ export default function ResetPassword() {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/auth/reset-password/${uidb64}/${token}/`, {
+      const response = await fetch(apiUrl(`/api/auth/reset-password/${uidb64}/${token}/`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),

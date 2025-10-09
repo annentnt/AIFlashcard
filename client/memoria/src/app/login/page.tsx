@@ -7,6 +7,7 @@ import { useAuth } from "@/src/context/AuthContext"
 import { useEffect } from "react"
 import Link from "next/link"
 import Navbar from "@/src/components/navbar"
+import { apiUrl } from "@/lib/api"
 import CardIllustration from "@/src/components/card-illustration"
 import { useRouter } from "next/navigation"
 
@@ -34,7 +35,7 @@ export default function Login() {
     e.preventDefault(); // Prevent form refresh
 
     try {
-      const response = await fetch("http://localhost:8000/api/auth/signin/", {
+      const response = await fetch(apiUrl('/api/auth/signin/'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

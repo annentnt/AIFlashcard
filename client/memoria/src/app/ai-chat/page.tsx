@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react"
 import { Send, AlertCircle, Loader } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import Navbar from "@/src/components/navbar"
+import { apiUrl } from "@/lib/api"
 import Footer from "@/src/components/footer"
 
 interface Message {
@@ -106,7 +107,7 @@ function AIChatInterface({ storeId, onClose }: AIChatInterfaceProps) {
         throw new Error("You need to log in to use this feature.")
       }
       
-      const response = await fetch("http://127.0.0.1:8000/api/chatbot/chat/", {
+      const response = await fetch(apiUrl('/api/chatbot/chat/'), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
