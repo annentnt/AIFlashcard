@@ -11,6 +11,12 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from urllib.parse import urlparse
+from dotenv import load_dotenv
+
+# Load environment variables early
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +26,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-2(l$%#liiixexkedz&=1z(cw^=tuf71p!3f=(%$0s=!w-l!+50"
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-insecure-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [h for h in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h]
 
 # Application definition
 INSTALLED_APPS = [
@@ -80,23 +86,39 @@ WSGI_APPLICATION = "memoria.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
-# }
+# Prefer DATABASE_URL (Render), fallback to local Postgres dev settings
+db_url = os.getenv("DATABASE_URL")
+if db_url:
+    parsed = urlparse(db_url)
+    engine = "django.db.backends.postgresql"
+    if parsed.scheme.startswith("postgres"):
+        engine = "django.db.backends.postgresql"
+    elif parsed.scheme == "mysql":
+        engine = "django.db.backends.mysql"
+    elif parsed.scheme == "sqlite":
+        engine = "django.db.backends.sqlite3"
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'memoria',
-        'USER': 'memoria',
-        'PASSWORD': 'memoria',
-        'HOST': 'localhost',
-        'PORT': '5432',
+    DATABASES = {
+        'default': {
+            'ENGINE': engine,
+            'NAME': (parsed.path.lstrip('/') if parsed.path else '') or os.getenv('DB_NAME', ''),
+            'USER': parsed.username or os.getenv('DB_USER', ''),
+            'PASSWORD': parsed.password or os.getenv('DB_PASSWORD', ''),
+            'HOST': parsed.hostname or os.getenv('DB_HOST', ''),
+            'PORT': str(parsed.port or ''),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': os.getenv('DB_NAME', 'memoria'),
+            'USER': os.getenv('DB_USER', 'memoria'),
+            'PASSWORD': os.getenv('DB_PASSWORD', 'memoria'),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+        }
+    }
 
 
 # Password validation
@@ -134,11 +156,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Base URLs used in emails/redirects
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000")
+BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://127.0.0.1:8000")
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -158,28 +185,31 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # React app URL
+
+# Comma-separated list of exact origins
+_cors_origins = [o for o in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if o]
+CORS_ALLOWED_ORIGINS = _cors_origins
+
+# Allow common preview domains
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+    r"^https://.*\.onrender\.com$",
 ]
 
 MIDDLEWARE.insert(0, "corsheaders.middleware.CorsMiddleware")
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "your_email@gmail.com"
-EMAIL_HOST_PASSWORD = "your_password"
-DEFAULT_FROM_EMAIL = "Memoria"
-
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() == "true"
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Memoria")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-USED_GPT_MODEL = "gpt-4o-mini"
+USED_GPT_MODEL = os.getenv("USED_GPT_MODEL", "gpt-4o-mini")
+CHECK_CONTENT_SAFETY = os.getenv("CHECK_CONTENT_SAFETY", "False").lower() == "true"
 
 # Media file settings
 MEDIA_URL = '/media/'
@@ -194,3 +224,11 @@ GRAPHS_DIR = os.path.join(MEDIA_ROOT, 'graphs')
 os.makedirs(GRAPHS_DIR, exist_ok=True)
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20MB
+
+# CSRF and proxy settings for hosted environments
+CSRF_TRUSTED_ORIGINS = [
+    *(o for o in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if o),
+    'https://*.vercel.app',
+    'https://*.onrender.com',
+]
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

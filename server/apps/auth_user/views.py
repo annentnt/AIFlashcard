@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+import os
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
@@ -17,6 +18,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import UserSerializer
 from memoria.settings import DEFAULT_FROM_EMAIL
+from django.conf import settings
 
 
 class RegisterView(APIView):
@@ -30,7 +32,8 @@ class RegisterView(APIView):
             # Generate email confirmation token
             token = default_token_generator.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
-            verification_link = f"http://localhost:8000/api/auth/activate/{uid}/{token}/"
+            backend_base = os.getenv("BACKEND_BASE_URL", getattr(settings, 'BACKEND_BASE_URL', 'http://127.0.0.1:8000'))
+            verification_link = f"{backend_base}/api/auth/activate/{uid}/{token}/"
 
             # Send email
             subject = "Xác nhận đăng ký tài khoản - Memoria"
@@ -50,14 +53,17 @@ class ActivateAccountView(APIView):
             uid = force_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            return redirect("http://localhost:3000/verification-failed/")  # Redirect to failure page
+            frontend_base = os.getenv("FRONTEND_BASE_URL", getattr(settings, 'FRONTEND_BASE_URL', 'http://localhost:3000'))
+            return redirect(f"{frontend_base}/verification-failed/")  # Redirect to failure page
 
         if default_token_generator.check_token(user, token):
             user.is_active = True
             user.save()
-            return redirect(f"http://localhost:3000/account-success/")  # Redirect to success page
+            frontend_base = os.getenv("FRONTEND_BASE_URL", getattr(settings, 'FRONTEND_BASE_URL', 'http://localhost:3000'))
+            return redirect(f"{frontend_base}/account-success/")  # Redirect to success page
         else:
-            return redirect("http://localhost:3000/verification-failed/")  # Redirect to failure page
+            frontend_base = os.getenv("FRONTEND_BASE_URL", getattr(settings, 'FRONTEND_BASE_URL', 'http://localhost:3000'))
+            return redirect(f"{frontend_base}/verification-failed/")  # Redirect to failure page
         
 
 class SignInView(APIView):
@@ -105,7 +111,8 @@ class RequestPasswordResetView(APIView):
 
         uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-        reset_link = f"http://localhost:3000/reset-password/{uidb64}/{token}/"
+        frontend_base = os.getenv("FRONTEND_BASE_URL", getattr(settings, 'FRONTEND_BASE_URL', 'http://localhost:3000'))
+        reset_link = f"{frontend_base}/reset-password/{uidb64}/{token}/"
 
         # Send email
         subject = "Đặt lại mật khẩu cho tài khoản - Memoria"
@@ -126,7 +133,8 @@ class ResetPasswordView(APIView):
             return Response({"error": "Liên kết đặt lại mật khẩu không hợp lệ!"}, status=status.HTTP_400_BAD_REQUEST)
 
         if not default_token_generator.check_token(user, token):
-            return redirect("http://localhost:3000/reset-password/failed")  # Redirect to failure page
+            frontend_base = os.getenv("FRONTEND_BASE_URL", getattr(settings, 'FRONTEND_BASE_URL', 'http://localhost:3000'))
+            return redirect(f"{frontend_base}/reset-password/failed")  # Redirect to failure page
             # return Response({"error": "Token không hợp lệ hoặc đã hết hạn!"}, status=status.HTTP_400_BAD_REQUEST)
 
         new_password = request.data.get("password")
