@@ -1,12 +1,27 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef, useEffect } from "react"
+import { Suspense, useState, useRef, useEffect } from "react"
 import { Send, AlertCircle, Loader } from "lucide-react"
-import { useSearchParams } from "next/navigation"
+ 
 import Navbar from "@/src/components/navbar"
 import { apiUrl } from "@/lib/api"
 import Footer from "@/src/components/footer"
+
+// Wrap the content that uses useSearchParams in Suspense
+function AIChatPageContent() {
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      <main className="flex-grow flex items-center justify-center py-8 px-4">
+        <Suspense fallback={<div className="max-w-3xl w-full mx-auto h-[70vh] flex items-center justify-center">Loading…</div>}>
+          <AIChatPageContent />
+        </Suspense>
+      </main>
+      <Footer />
+    </div>
+  );
+}
 
 interface Message {
   id: string
@@ -15,12 +30,12 @@ interface Message {
 }
 
 export default function AIChatPage() {
-  const searchParams = useSearchParams();
   const [storeId, setStoreId] = useState("");
 
   // Ưu tiên lấy từ URL, fallback sang localStorage
   useEffect(() => {
-    const idFromUrl = searchParams?.get('storeId');
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const idFromUrl = params?.get('storeId');
     if (idFromUrl) {
       setStoreId(idFromUrl);
     } else {
@@ -30,7 +45,7 @@ export default function AIChatPage() {
         setStoreId(stored); // ✅ Gán lại vào state
       }
     }
-  }, [searchParams]);
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen">
